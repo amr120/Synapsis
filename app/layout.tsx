@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: "Agents buy and sell deep-research Markdown files, paid per file in USDC on Solana over x402.",
 };
 
-const links = [{ href: "/", label: "Market" }, { href: "/studio", label: "Seller studio" }, { href: "/sellers", label: "Sellers" }, { href: "/how-it-works", label: "About" }];
+const links = [{ href: "/", label: "Market" }, { href: "/sellers", label: "Sellers & studio" }, { href: "/how-it-works", label: "About" }];
 const usesPayments = modules.some((m) => m.id === "payments");
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

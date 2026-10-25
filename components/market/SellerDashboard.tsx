@@ -50,7 +50,7 @@ export async function SellerDashboard({ wallet, mode }: { wallet: string; mode: 
         <>
           <div className="session">
             <span><span className="live-dot" /> Signed in as <strong>{s.name}</strong> · wallet {short(s.wallet)} · read-only</span>
-            <Link href="/studio">Switch seller</Link>
+            <Link href="/sellers">Switch seller</Link>
           </div>
           <header className="market-head">
             <div>
