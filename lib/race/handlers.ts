@@ -6,7 +6,17 @@
 // layer's instructions and what must work. Use any AI model you like.
 import { TaskError, type Task, type TaskOutput, type TaskRequest, type TaskType } from "./protocol";
 // import { callTool, searchSource, ToolCallError } from "./tools";
-// If you added the Gemini module: import { askGemini } from "../ai/gemini";
+import { askGemini } from "../ai/gemini";
+
+const RESPOND_SYSTEM =
+  "You are Synapsis, a precise research agent. Answer the question correctly and directly. " +
+  "Lead with the answer itself (the number, name or fact), then at most one short sentence of support. " +
+  "For calculations, work carefully and give the final value. Do not ask follow-up questions.";
+
+/** The task input as a prompt: strings pass through, objects become JSON. */
+function asPrompt(input: unknown): string {
+  return typeof input === "string" ? input : JSON.stringify(input);
+}
 
 type Handler = ((task: Task, request: TaskRequest) => Promise<TaskOutput>) & { notImplemented?: boolean };
 
@@ -21,8 +31,14 @@ function notYet(type: TaskType, where: string): Handler {
 
 export const handlers: Record<TaskType, Handler> = {
   // First Intelligence: answer task.input (a question) with your AI model, in output.text.
-  //   respond: async (task) => ({ text: await askGemini(String(task.input)) }),
-  respond: notYet("respond", "handlers.respond"),
+  respond: async (task) => {
+    if (task.input === undefined || task.input === null || task.input === "") {
+      throw new TaskError("invalid_input", "respond tasks need task.input (the question).");
+    }
+    const text = (await askGemini(asPrompt(task.input), { system: RESPOND_SYSTEM })).trim();
+    if (!text) throw new TaskError("internal", "The model returned an empty answer.");
+    return { text };
+  },
 
   // Structured Outputs: turn task.input into JSON matching task.schema exactly, in output.data.
   // Missing input or schema? throw new TaskError("invalid_input", "...").

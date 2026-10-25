@@ -23,10 +23,11 @@ export class MissingGeminiKeyError extends Error {
   }
 }
 
-export async function askGemini(prompt: string): Promise<string> {
+export async function askGemini(prompt: string, options: { system?: string } = {}): Promise<string> {
   const response = await getClient().models.generateContent({
     model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
     contents: prompt,
+    config: options.system ? { systemInstruction: options.system } : undefined,
   });
   return response.text ?? "";
 }
