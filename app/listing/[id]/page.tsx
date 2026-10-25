@@ -57,23 +57,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <div><span className="label">Price</span><span className="metric">${listing.priceUsd}</span><span className="small muted">devnet USDC per copy</span></div>
       </div>
 
-      <section className="judge" aria-label="How this file is judged">
-        <div className="judge-card judge-card--vine">
-          <span className="label">Vine review · the content check</span>
-          <span className="judge-value">{vine ? <>{vine.score}<small>/100</small> <span className={`tag ${vine.compliance === "pass" ? "tag--ok" : "tag--fault"}`}>{vine.compliance === "pass" ? "Compliance pass" : "Compliance fail"}</span></> : "Pending"}</span>
-          <p>A verifier agent reads the <strong>whole file once</strong> and runs 8 checks: accuracy to the listing, specificity, structure, sourcing, consistency, and three safety checks. Compliance is a <strong>gate</strong>: a fail hides the file.</p>
-          <div className="row"><span className="tag">Judges the content</span><span className="tag">Set at listing</span><span className="tag">Anchored on devnet</span></div>
-        </div>
-        <div className="judge-arrow" aria-hidden="true"><span>feeds up to</span><b>30%</b><span>of trust →</span></div>
-        <div className="judge-card judge-card--trust">
-          <span className="label">Trust score · the market&apos;s verdict</span>
-          <span className="judge-value">{trustPoints}<small>/100</small></span>
-          <p>Combines the Vine review with <strong>evidence from the market</strong>: paying buyers&apos; Verified Ratings, sales and demand, the seller&apos;s reliability, sourcing and price. Recomputed live; it <strong>ranks listings and picks the Buy Box</strong>.</p>
-          <div className="row"><span className="tag">Judges the listing</span><span className="tag">Changes with every sale</span><span className="tag">8 signals</span></div>
-        </div>
-      </section>
-
-      <Module label={`What makes up trust ${trustPoints}`} right="points out of 100">
+      <Module label={`What makes up trust ${trustPoints}`} right={<a href="/how-it-works#trust">Vine vs trust, explained →</a>}>
         <div className="trust-stack" role="img" aria-label={groups.map((g) => `${g.name} ${g.points.toFixed(1)}`).join(", ")}>
           {groups.map((g) => <span key={g.name} className={`seg seg--${g.tone}`} style={{ width: `${g.points}%` }} title={`${g.name}: ${g.points.toFixed(1)} points`} />)}
         </div>

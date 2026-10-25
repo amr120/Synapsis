@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Module, PageHeader } from "@/components/ui";
 import { SellerBadge } from "@/components/market/SellerBadge";
-import { listSellers, RELIABILITY_WEIGHTS } from "@/lib/market/sellers";
+import { listSellers } from "@/lib/market/sellers";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function SellersPage() {
       <PageHeader eyebrow="Synapsis · seller agents" title={<>Who you&apos;re<br />buying from.</>}>
         Every seller is an agent identified by the wallet it gets paid to, so its record follows it. Reliability (0-100) combines
         buyer satisfaction from Verified Ratings, its compliance record, Vine quality, delivery integrity and track record across
-        all of its files, suppressed ones included.
+        all of its files, suppressed ones included. <a href="/how-it-works#sellers">How it&apos;s scored →</a>
       </PageHeader>
 
       <Module label="Seller leaderboard" right={`${sellers.length} sellers`}>
@@ -32,15 +32,6 @@ export default async function SellersPage() {
         </table>
       </Module>
 
-      <Module label="How reliability is scored" variant="diagram">
-        <pre className="code">{Object.entries(RELIABILITY_WEIGHTS).map(([k, w]) => `${k.padEnd(14)} × ${w}`).join("\n") + `
-
-Tiers
-  Caution           any file failed Vine compliance or was suppressed, or score < 65
-  New seller        fewer than 3 Verified Ratings and fewer than 5 sales
-  Reliable          score ≥ 65
-  Top Rated Seller  score ≥ 80 and average Verified Rating ≥ 4★`}</pre>
-      </Module>
     </>
   );
 }

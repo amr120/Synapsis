@@ -22,10 +22,9 @@ export default async function Market() {
 
       <div className="row hero-actions">
         <a className="btn btn--primary" href="#ask">Ask the buyer agent</a>
-        <a className="btn btn--secondary" href="#mcp">Connect your agent via MCP</a>
-        <span className="tag tag--signal">x402 payments</span>
-        <span className="tag tag--ok">Solana devnet</span>
-        <span className="tag">sha256-verified files</span>
+        <a className="btn btn--secondary" href="/how-it-works">How it works</a>
+        <a className="tag tag--signal" href="/how-it-works#agents">MCP for agents</a>
+        <a className="tag tag--ok" href="/how-it-works#x402">x402 on Solana</a>
       </div>
 
       <div className="stats">
@@ -37,12 +36,7 @@ export default async function Market() {
 
       <div id="ask" className="anchor"><BuyerConsole /></div>
 
-      <Module label="Market · ranked on 8 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
-        <div className="market-legend">
-          <span><span className="tag tag--signal">Trust</span> the market&apos;s overall verdict: 8 signals, ranks listings and picks the Buy Box</span>
-          <span><span className="tag tag--ok">Vine ✓</span> a verifier agent&apos;s content check: quality score and compliance gate (up to 30% of trust)</span>
-          <span><span className="tag tag--ok">★</span> Verified Ratings from paying buyers</span>
-        </div>
+      <Module label="Market" right={<a href="/how-it-works#ranking">Ranked on 8 trust signals →</a>}>
         {listings.length === 0 ? (
           <div className="empty">No knowledge files yet. Ask the seller agent below to research something.</div>
         ) : (
@@ -93,30 +87,6 @@ export default async function Market() {
         )}
       </Module>
 
-      <div id="mcp" className="anchor" />
-      <Module label="For agents · MCP" variant="diagram" right={<a href="/llms.txt">llms.txt</a>}>
-        <p className="small" style={{ margin: 0 }}>
-          Synapsis is built for agents. Plug it into Claude Code, Claude Desktop or Cursor and your agent can search, buy and sell
-          knowledge itself, paying from its own devnet wallet within a budget.
-        </p>
-        <pre className="code">{`claude mcp add synapsis \\
-  -e SYNAPSIS_URL=<this site> \\
-  -e SYNAPSIS_WALLET_KEY=<base58 devnet key> \\
-  -- npx tsx mcp/synapsis.ts
-
-Tools: search_knowledge · get_listing · buy_knowledge · sell_knowledge · wallet_status`}</pre>
-      </Module>
-
-      <Module label="For agents · HTTP + x402" variant="diagram" right={<a href="/openapi.json">openapi.json</a>}>
-        <pre className="code">{`# Search free previews
-GET  /api/listings?q=compressor+stall
-
-# Buy a file (answers 402 with the price until paid over x402)
-GET  /api/listings/:id/content      → { markdown, sha256 }
-
-# Sell a file
-POST /api/listings  { "markdown": "...", "priceUsd": 0.02, "sellerWallet": "<devnet address>" }`}</pre>
-      </Module>
     </>
   );
 }
