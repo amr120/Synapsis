@@ -38,8 +38,32 @@ async function callWithRetry(tool: ToolSpec, task: Task, args: Record<string, un
   }
 }
 
+const DATA_PROMPT =
+  "Now return the final result as a single JSON object for output.data. " +
+  "If the task names fields (for example totalGbp), use exactly those names; otherwise use short camelCase names " +
+  "for the computed answer. Numbers must be JSON numbers computed exactly from the tool results (no units, no strings). " +
+  "Recompute any arithmetic step by step before answering.";
+
+/** Turns the finished conversation into output.data, matching task.schema when the verifier gives one. */
+async function structuredResult(task: Task, contents: Content[]): Promise<unknown> {
+  const response = await generateWithGemini({
+    contents: [...contents, { role: "user", parts: [{ text: DATA_PROMPT }] }],
+    config: {
+      systemInstruction: TOOL_SYSTEM,
+      responseMimeType: "application/json",
+      ...(task.schema ? { responseJsonSchema: task.schema } : {}),
+    },
+  });
+  try {
+    return JSON.parse(response.text ?? "");
+  } catch {
+    throw new TaskError("internal", "The model returned invalid JSON for output.data.");
+  }
+}
+
 export async function runToolAgent(task: Task, system = TOOL_SYSTEM): Promise<TaskOutput> {
   const tools = task.tools ?? [];
+  console.log("[race] tool task:", JSON.stringify({ input: task.input, schema: task.schema, tools: tools.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })), limits: task.limits }));
   if (!task.input || tools.length === 0) throw new TaskError("invalid_input", "use_tools tasks need task.input and task.tools.");
   if (!task.challengeToken) throw new TaskError("invalid_input", "use_tools tasks need task.challengeToken.");
 
@@ -70,7 +94,8 @@ export async function runToolAgent(task: Task, system = TOOL_SYSTEM): Promise<Ta
       const text = (response.text ?? "").trim();
       if (!text) throw new TaskError("internal", "The model returned no answer.");
       if (toolResults.length === 0) throw new TaskError("internal", "The model answered without calling any tool.");
-      return { text, toolResults };
+      contents.push({ role: "model", parts: [{ text }] });
+      return { text, data: await structuredResult(task, contents), toolResults };
     }
 
     if (toolResults.length + calls.length > maxCalls) {
