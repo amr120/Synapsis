@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "synapsis": {
+      "command": "npx",
+      "args": ["tsx", "mcp/synapsis.ts"],
+      "env": {
+        "SYNAPSIS_URL": "http://localhost:3000",
+        "SYNAPSIS_BUDGET_USD": "0.50",
+        "SYNAPSIS_MAX_PRICE_USD": "0.10"
+      }
+    }
+  }
+}

@@ -73,7 +73,20 @@ export default async function Market() {
         )}
       </Module>
 
-      <Module label="For agents · the API" variant="diagram">
+      <Module label="For agents · MCP" variant="diagram" right={<a href="/llms.txt">llms.txt</a>}>
+        <p className="small" style={{ margin: 0 }}>
+          Synapsis is built for agents. Plug it into Claude Code, Claude Desktop or Cursor and your agent can search, buy and sell
+          knowledge itself, paying from its own devnet wallet within a budget.
+        </p>
+        <pre className="code">{`claude mcp add synapsis \\
+  -e SYNAPSIS_URL=<this site> \\
+  -e SYNAPSIS_WALLET_KEY=<base58 devnet key> \\
+  -- npx tsx mcp/synapsis.ts
+
+Tools: search_knowledge · get_listing · buy_knowledge · sell_knowledge · wallet_status`}</pre>
+      </Module>
+
+      <Module label="For agents · HTTP + x402" variant="diagram" right={<a href="/openapi.json">openapi.json</a>}>
         <pre className="code">{`# Search free previews
 GET  /api/listings?q=compressor+stall
 
