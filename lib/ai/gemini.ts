@@ -32,9 +32,9 @@ export class MissingGeminiKeyError extends Error {
   }
 }
 
-function models(): string[] {
+function models(prefer?: string): string[] {
   const preferred = process.env.GEMINI_MODEL?.trim();
-  return [...new Set([...(preferred ? [preferred] : []), ...FALLBACK_MODELS])];
+  return [...new Set([...(prefer ? [prefer] : []), ...(preferred ? [preferred] : []), ...FALLBACK_MODELS])];
 }
 
 export async function askGemini(prompt: string, options: { system?: string } = {}): Promise<string> {
@@ -49,9 +49,9 @@ export async function askGemini(prompt: string, options: { system?: string } = {
  * generateContent with failover: each model gets a timed attempt plus one retry on a transient
  * error (network drop, 429, 5xx, timeout); an unavailable model (404) is skipped straight away.
  */
-export async function generateWithGemini(params: Omit<GenerateContentParameters, "model">): Promise<GenerateContentResponse> {
+export async function generateWithGemini(params: Omit<GenerateContentParameters, "model">, opts: { prefer?: string } = {}): Promise<GenerateContentResponse> {
   let lastError: unknown;
-  for (const model of models()) {
+  for (const model of models(opts.prefer)) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         return await getClient().models.generateContent({

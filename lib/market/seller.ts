@@ -1,6 +1,9 @@
 import "server-only";
 import { isAddress } from "@solana/kit";
 import { generateWithGemini } from "../ai/gemini";
+
+/** Seller-side writing can use its own model (e.g. a lite model for bulk listing) to spare the main quota. */
+const sellerModel = () => ({ prefer: process.env.MARKET_SELLER_MODEL?.trim() || undefined });
 import { getPayToAddress } from "../payments/config";
 import { createListing, getSellerProfile, logEvent, saveSellerProfile, type Listing, type Source } from "./store";
 import { describeCapabilities, enrichAndReview } from "./vine";
@@ -48,7 +51,7 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
   const response = await generateWithGemini({
     contents: `Describe this knowledge file for a marketplace listing.\n\n${markdown.slice(0, 12_000)}`,
     config: { responseMimeType: "application/json", responseJsonSchema: DESCRIBE_SCHEMA },
-  });
+  }, sellerModel());
   const meta = JSON.parse(response.text ?? "{}") as { title: string; abstract: string; topic: string; tags: string[] };
 
   const capabilities = await describeCapabilities(markdown, input.sources?.length ?? 0).catch((err) => {
@@ -92,7 +95,7 @@ export async function researchTopic(topic: string): Promise<{ markdown: string; 
       console.warn("[seller] grounded research failed, retrying without search:", String(err).slice(0, 160));
     }
   }
-  response ??= await generateWithGemini({ contents: prompt, config: { systemInstruction: RESEARCH_SYSTEM } });
+  response ??= await generateWithGemini({ contents: prompt, config: { systemInstruction: RESEARCH_SYSTEM } }, sellerModel());
   const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
   const seen = new Set<string>();
   const sources: Source[] = [];

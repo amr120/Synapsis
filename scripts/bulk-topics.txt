@@ -1,0 +1,91 @@
+# seller|priceUsd|topic: research topics for the bulk seeding run (scripts/bulk-sell.sh)
+atlas-bio-research|0.03|CAR-T cell therapy for solid tumours: barriers and 2026 trial landscape
+atlas-bio-research|0.02|mRNA vaccine platforms beyond COVID: cancer vaccines, flu and RSV pipelines
+atlas-bio-research|0.02|Antimicrobial resistance: new antibiotic classes, phage therapy and incentives
+atlas-bio-research|0.03|Alzheimer's anti-amyloid antibodies: lecanemab and donanemab efficacy and safety
+atlas-bio-research|0.02|Microbiome therapeutics: FMT, defined consortia and regulatory status
+atlas-bio-research|0.03|Base editing for sickle cell disease and beta-thalassemia: Casgevy and successors
+atlas-bio-research|0.02|Organoids and organ-on-chip models replacing animal testing
+atlas-bio-research|0.04|Spatial transcriptomics methods: Visium, MERFISH, Xenium compared
+atlas-bio-research|0.02|Long COVID: proposed mechanisms and treatments under trial
+atlas-bio-research|0.03|Psychedelic-assisted therapy: psilocybin and MDMA trial evidence and regulation
+atlas-bio-research|0.02|Malaria vaccines R21 and RTS,S: efficacy, rollout and supply
+atlas-bio-research|0.03|Single-cell RNA sequencing analysis pipelines and common pitfalls
+atlas-bio-research|0.02|Xenotransplantation: pig kidney and heart transplants to date
+atlas-bio-research|0.03|AI in drug discovery: generative chemistry, clinical-stage candidates and track record
+atlas-bio-research|0.02|Epigenetic clocks and biological age: methods and validity
+atlas-bio-research|0.02|Antibody-drug conjugates: design, approved drugs and next-generation payloads
+atlas-bio-research|0.03|Huntington's disease therapeutics: huntingtin-lowering approaches
+atlas-bio-research|0.02|Wearable continuous glucose monitors beyond diabetes
+meridian-policy-desk|0.03|UK AI Security Institute: mandate, evaluations and international network
+meridian-policy-desk|0.02|US export controls on AI chips: rules, thresholds and China impact
+meridian-policy-desk|0.03|GDPR and training AI models: lawful basis, legitimate interest and DPA guidance
+meridian-policy-desk|0.02|Digital Markets Act gatekeeper obligations and enforcement cases
+meridian-policy-desk|0.02|UK Online Safety Act duties and Ofcom codes of practice
+meridian-policy-desk|0.03|Copyright and generative AI: lawsuits, text and data mining exceptions
+meridian-policy-desk|0.02|MiCA regulation for crypto-assets in the EU: licensing and stablecoins
+meridian-policy-desk|0.02|UK planning reform and grid connection queues for clean energy
+meridian-policy-desk|0.03|Frontier AI safety frameworks of major labs compared
+meridian-policy-desk|0.02|CHIPS Act funding allocations and semiconductor fab progress
+meridian-policy-desk|0.02|EU Carbon Border Adjustment Mechanism: phases and affected sectors
+meridian-policy-desk|0.02|University spinout equity and licensing terms in the UK
+meridian-policy-desk|0.03|Open-weight AI model release debate: risks, benefits and policy positions
+meridian-policy-desk|0.02|Research security and international collaboration rules for UK universities
+meridian-policy-desk|0.02|Stablecoin regulation in the US and UK: reserve and licensing requirements
+meridian-policy-desk|0.03|Algorithmic accountability: AI audit standards ISO 42001 and NIST AI RMF
+meridian-policy-desk|0.02|Nuclear fusion regulation: UK and US approaches to licensing fusion plants
+ledger-labs|0.03|Retrieval-augmented generation chunking and embedding strategies
+ledger-labs|0.03|LLM agent frameworks compared: tool calling, memory and orchestration
+ledger-labs|0.02|Model Context Protocol (MCP): architecture, transports and security considerations
+ledger-labs|0.03|Prompt injection attacks and defences for tool-using agents
+ledger-labs|0.03|Speculative decoding and other LLM inference speedups
+ledger-labs|0.02|Quantisation of LLMs: GPTQ, AWQ, FP8 and accuracy trade-offs
+ledger-labs|0.03|Reinforcement learning from human feedback vs DPO vs RLAIF
+ledger-labs|0.02|Solana architecture: proof of history, Sealevel and Firedancer
+ledger-labs|0.02|Stablecoins on Solana: USDC, PYUSD and payment flows
+ledger-labs|0.03|Zero-knowledge proofs in practice: zk-SNARKs vs STARKs and applications
+ledger-labs|0.02|Decentralised identity for AI agents: DIDs, verifiable credentials and wallets
+ledger-labs|0.02|Vector databases compared: pgvector, Pinecone, Weaviate, Qdrant
+ledger-labs|0.03|Evaluating LLM agents: benchmarks like SWE-bench, GAIA and tau-bench
+ledger-labs|0.02|Long-context LLMs: techniques and needle-in-a-haystack results
+ledger-labs|0.03|Post-quantum cryptography: NIST standards and migration timelines
+ledger-labs|0.02|Small language models on device: Phi, Gemma and on-device inference
+ledger-labs|0.03|Mechanistic interpretability: sparse autoencoders and circuit discovery
+ledger-labs|0.02|Account abstraction and smart wallets for autonomous agents
+ledger-labs|0.03|Synthetic data for training LLMs: methods and model collapse risks
+ledger-labs|0.02|GPU landscape for AI training: H100, B200, TPU and AMD MI300 compared
+helios-energy-analyst|0.03|Grid-scale battery storage: LFP vs sodium-ion vs flow batteries
+helios-energy-analyst|0.02|Offshore wind in the UK: Contracts for Difference rounds and costs
+helios-energy-analyst|0.03|Green hydrogen electrolysers: PEM vs alkaline vs solid oxide costs
+helios-energy-analyst|0.02|Heat pumps adoption in the UK: grants, performance and barriers
+helios-energy-analyst|0.03|Nuclear fusion progress: tokamaks, stellarators and private fusion firms
+helios-energy-analyst|0.02|Geothermal energy: enhanced geothermal systems and Fervo results
+helios-energy-analyst|0.02|EV charging infrastructure: standards, reliability and grid impact
+helios-energy-analyst|0.03|Long-duration energy storage: iron-air, compressed air and pumped hydro
+helios-energy-analyst|0.02|Critical minerals supply chains: lithium, cobalt, nickel and rare earths
+helios-energy-analyst|0.02|Green steel: hydrogen direct reduction and electric arc furnaces
+helios-energy-analyst|0.03|Methane emissions from oil and gas: satellite detection and abatement
+helios-energy-analyst|0.02|Vehicle-to-grid technology: trials, economics and standards
+helios-energy-analyst|0.02|Agrivoltaics: combining solar farms and agriculture
+helios-energy-analyst|0.03|Carbon markets: compliance vs voluntary, credit quality and integrity
+helios-energy-analyst|0.02|Data centre energy demand from AI and grid responses
+helios-energy-analyst|0.02|Tidal and wave energy: UK projects and costs
+helios-energy-analyst|0.03|Ocean-based carbon dioxide removal: alkalinity enhancement and seaweed
+synapsis-research-agent|0.03|Computational fluid dynamics turbulence models: RANS vs LES vs DNS
+synapsis-research-agent|0.02|Additive manufacturing of jet engine parts: materials and certification
+synapsis-research-agent|0.03|Hypersonic flight: scramjets, thermal protection and test programmes
+synapsis-research-agent|0.02|Electric aircraft and eVTOL certification status
+synapsis-research-agent|0.03|Gas turbine combustion: lean premixed combustors and NOx emissions
+synapsis-research-agent|0.02|Ceramic matrix composites in turbine engines
+synapsis-research-agent|0.03|Rotor dynamics: critical speeds, bearings and vibration diagnosis
+synapsis-research-agent|0.02|Fatigue and fracture mechanics in aerospace structures
+synapsis-research-agent|0.02|Reusable rockets: Falcon 9, Starship and New Glenn engineering
+synapsis-research-agent|0.03|Boundary layer transition and flow control on wings
+synapsis-research-agent|0.02|Digital twins in engineering: definitions, uses and limits
+synapsis-research-agent|0.02|Heat exchanger design and fouling in industrial plants
+synapsis-research-agent|0.03|Aeroacoustics: jet noise and fan noise reduction
+synapsis-research-agent|0.02|Robotics in manufacturing: cobots, vision and adoption
+synapsis-research-agent|0.02|Superconducting magnets: HTS tapes for fusion and MRI
+synapsis-research-agent|0.03|Nuclear thermal and electric propulsion for spacecraft
+synapsis-research-agent|0.02|Engineering of humanoid robots: actuators, hands and control
+synapsis-research-agent|0.02|Semiconductor fabrication: EUV lithography and gate-all-around transistors
