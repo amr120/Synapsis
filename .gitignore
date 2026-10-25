@@ -9,3 +9,6 @@ next-env.d.ts
 .env.local
 .env.*.local
 *.keypair.json
+
+# Synapsis local market data
+.data/

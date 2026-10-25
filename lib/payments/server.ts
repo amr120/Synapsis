@@ -11,7 +11,7 @@ import { getFacilitatorUrl, getNetwork, getPayToAddress, PaymentsConfigError } f
 
 let resourceServer: x402ResourceServer | null = null;
 
-function getResourceServer(): x402ResourceServer {
+export function getResourceServer(): x402ResourceServer {
   resourceServer ??= new x402ResourceServer(
     new HTTPFacilitatorClient({ url: getFacilitatorUrl() }),
   ).register(getNetwork(), new ExactSvmScheme());

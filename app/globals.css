@@ -158,3 +158,27 @@ textarea:focus, input:focus { border-color: var(--signal); box-shadow: inset 0 0
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Synapsis market ---------- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.stats > div { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--ink); border-radius: 4px; box-shadow: 3px 3px 0 var(--ink); }
+.metric--small { font-size: 18px !important; }
+.listing { min-height: 210px; }
+.listing p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.listing-foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px 12px; font: 500 10.5px var(--mono); color: var(--muted); text-transform: uppercase; }
+.listing-foot span:first-child { color: var(--signal-ink); font-weight: 600; }
+.btn-small { height: 30px !important; padding: 0 10px !important; font-size: 11px !important; }
+.trace { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.trace li { display: flex; gap: 10px; align-items: baseline; font-size: 13px; line-height: 1.45; }
+.trace .tag { min-width: 68px; text-align: center; }
+.receipts { width: 100%; border-collapse: collapse; font-size: 13px; }
+.receipts th { text-align: left; font: 500 10px var(--mono); color: var(--muted); text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--ink); }
+.receipts td { padding: 8px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+.receipts td:nth-child(n+2) { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.md { white-space: normal; }
+.md h2, .md h3, .md h4 { margin: 18px 0 6px; line-height: 1.25; }
+.md h2:first-child, .md h3:first-child { margin-top: 0; }
+.md p { margin: 0 0 10px; }
+.md ul, .md ol { margin: 0 0 10px; padding-left: 22px; }
+.md li { margin: 3px 0; }
+@media (max-width: 640px) { .receipts th:nth-child(3), .receipts td:nth-child(3) { display: none; } }
