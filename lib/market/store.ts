@@ -223,6 +223,12 @@ export async function listPurchases(limit = 20): Promise<Purchase[]> {
   return (await store().range(PURCHASES, limit)).map((s) => JSON.parse(s) as Purchase);
 }
 
+/** All-time purchase count and volume (for the market's headline stats). */
+export async function purchaseTotals(): Promise<{ count: number; volumeUsd: number }> {
+  const all = await listPurchases(100_000);
+  return { count: all.length, volumeUsd: Math.round(all.reduce((s, p) => s + p.priceUsd, 0) * 100) / 100 };
+}
+
 export async function updateListing(listing: Listing): Promise<void> {
   await store().set(listingKey(listing.id), JSON.stringify(listing));
 }

@@ -302,3 +302,22 @@ section.anchor { display: flex; flex-direction: column; gap: 14px; }
   .ev-verb { display: none; }
   .ev-subject { grid-column: 1 / -1; }
 }
+
+/* ---------- Market search, filters, paging ---------- */
+.market-tools { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.market-tools input { padding: 11px 16px; }
+select { font: 500 14px var(--sans); color: var(--text); background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-strong); border-radius: 12px; padding: 0 36px 0 14px; height: 46px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; cursor: pointer; }
+select:focus { outline: none; border-color: rgba(139, 108, 255, 0.7); box-shadow: 0 0 0 4px rgba(139, 108, 255, 0.15); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 13px var(--sans); color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 7px 13px; cursor: pointer; transition: all 140ms ease; }
+.chip span { color: var(--muted); margin-left: 4px; font-family: var(--mono); font-size: 11.5px; }
+.chip:hover { border-color: var(--border-strong); color: #fff; }
+.chip--on { color: #fff; background: rgba(139, 108, 255, 0.16); border-color: rgba(139, 108, 255, 0.55); }
+.chip--on span { color: #c4b5fd; }
+.market-more { justify-content: space-between; }
+@media (max-width: 640px) {
+  .market-tools { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats > div { padding: 14px 16px; }
+  .metric { font-size: 26px; }
+}

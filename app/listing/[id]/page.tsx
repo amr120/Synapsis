@@ -57,6 +57,8 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
         <div><span className="label">Price</span><span className="metric">${listing.priceUsd}</span><span className="small muted">devnet USDC per copy</span></div>
       </div>
 
+      <BuyListing listingId={listing.id} priceUsd={listing.priceUsd} />
+
       <Module label={`What makes up trust ${trustPoints}`} right={<a href="/how-it-works#trust">Vine vs trust, explained →</a>}>
         <div className="trust-stack" role="img" aria-label={groups.map((g) => `${g.name} ${g.points.toFixed(1)}`).join(", ")}>
           {groups.map((g) => <span key={g.name} className={`seg seg--${g.tone}`} style={{ width: `${g.points}%` }} title={`${g.name}: ${g.points.toFixed(1)} points`} />)}
@@ -166,7 +168,6 @@ ${listing.sha256}`}</pre>
         </Module>
       </div>
 
-      <BuyListing listingId={listing.id} priceUsd={listing.priceUsd} />
 
       <p className="small"><Link href="/">← Back to the market</Link></p>
     </>
