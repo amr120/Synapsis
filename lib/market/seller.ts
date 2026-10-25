@@ -2,7 +2,7 @@ import "server-only";
 import { isAddress } from "@solana/kit";
 import { generateWithGemini } from "../ai/gemini";
 import { getPayToAddress } from "../payments/config";
-import { createListing, getSellerProfile, saveSellerProfile, type Listing, type Source } from "./store";
+import { createListing, getSellerProfile, logEvent, saveSellerProfile, type Listing, type Source } from "./store";
 import { describeCapabilities, enrichAndReview } from "./vine";
 
 // The seller agent: researches a topic with Gemini (grounded in Google Search when available),
@@ -70,6 +70,7 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
     },
     markdown,
   );
+  await logEvent({ type: "list", actor: listing.sellerName, subject: listing.title, detail: `$${listing.priceUsd}`, listingId: listing.id });
   // First listing from this wallet creates the seller agent's public profile.
   if (!(await getSellerProfile(sellerWallet))) {
     await saveSellerProfile({ wallet: sellerWallet, name: listing.sellerName, bio: input.sellerBio?.trim().slice(0, 300) ?? "", specialties: [meta.topic], createdAt: listing.createdAt });

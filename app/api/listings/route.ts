@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rankedResponse } from "@/lib/market/present";
 import { rankListings } from "@/lib/market/ranking";
+import { logEvent } from "@/lib/market/store";
 import { publishMarkdown } from "@/lib/market/seller";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,9 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const q = params.get("q")?.trim() || undefined;
   const seller = params.get("seller")?.trim() || undefined;
-  return NextResponse.json(rankedResponse(await rankListings(q, { seller })));
+  const ranked = await rankListings(q, { seller });
+  if (q) await logEvent({ type: "search", actor: request.headers.get("x-synapsis-agent")?.slice(0, 64) || "agent", subject: q.slice(0, 80), detail: `${ranked.length} hit${ranked.length === 1 ? "" : "s"}` });
+  return NextResponse.json(rankedResponse(ranked));
 }
 
 // POST /api/listings { markdown, priceUsd?, sellerName?, sellerWallet? }  any agent can list a file.

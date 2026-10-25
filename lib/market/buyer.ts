@@ -3,7 +3,8 @@ import { askGemini, generateWithGemini } from "../ai/gemini";
 import { buy } from "../paidapi/buyer";
 import { getSpendingTracker } from "../paidapi/buyer";
 import { buyBox, rankListings, rateListing, WEIGHTS } from "./ranking";
-import { recordPurchase, sha256, type Listing } from "./store";
+import { loadAgentSigner } from "../payments/client";
+import { logEvent, recordPurchase, sha256, type Listing } from "./store";
 
 // The buyer agent: given a question, it searches Synapsis, judges the free abstracts, buys the
 // best file over x402 (within its spending limits), checks the file's hash against the listing,
@@ -65,6 +66,8 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
   const ranked = await rankListings(question);
   const box = buyBox(ranked);
   const candidates = ranked.slice(0, 6);
+  const me = await loadAgentSigner().then((s) => s.address).catch(() => "buyer-agent");
+  await logEvent({ type: "search", actor: me, subject: question.slice(0, 80), detail: `${ranked.length} hit${ranked.length === 1 ? "" : "s"}` });
   run.candidates = candidates.map(({ listing: { id, title, priceUsd } }) => ({ id, title, priceUsd }));
   log("search", `${ranked.length} listing${ranked.length === 1 ? "" : "s"} matched "${question}", ranked on ${Object.keys(WEIGHTS).length} signals`);
   if (candidates.length === 0) {

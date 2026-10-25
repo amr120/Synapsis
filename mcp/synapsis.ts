@@ -90,7 +90,8 @@ async function paidFetch(): Promise<typeof fetch> {
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { ...init, signal: AbortSignal.timeout(90_000) });
+  const agent = await Promise.resolve().then(signer).then((s) => s.address).catch(() => "mcp-agent");
+  const res = await fetch(`${BASE}${path}`, { ...init, headers: { ...(init?.headers as Record<string, string>), "x-synapsis-agent": agent }, signal: AbortSignal.timeout(90_000) });
   const body = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) throw new Error(body.error || `Synapsis returned HTTP ${res.status} for ${path}`);
   return body;

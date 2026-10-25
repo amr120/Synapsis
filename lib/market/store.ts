@@ -213,6 +213,7 @@ export async function searchListings(query: string, limit = 8): Promise<Listing[
 export async function recordPurchase(p: Omit<Purchase, "id" | "createdAt">): Promise<Purchase> {
   const purchase: Purchase = { ...p, id: newId(), createdAt: new Date().toISOString() };
   await store().push(PURCHASES, JSON.stringify(purchase));
+  await logEvent({ type: "buy", actor: p.payer ?? "agent", subject: p.title, detail: `$${p.priceUsd}${p.verified ? " ✓" : " ✗"}`, listingId: p.listingId, transaction: p.transaction });
   const listing = await getListing(p.listingId);
   if (listing) await store().set(listingKey(listing.id), JSON.stringify({ ...listing, sales: listing.sales + 1 }));
   return purchase;
@@ -224,6 +225,36 @@ export async function listPurchases(limit = 20): Promise<Purchase[]> {
 
 export async function updateListing(listing: Listing): Promise<void> {
   await store().set(listingKey(listing.id), JSON.stringify(listing));
+}
+
+/** One line of the live activity feed: something an agent (or the verifier) just did. */
+export interface ActivityEvent {
+  id: string;
+  at: string;
+  type: "search" | "list" | "buy" | "rate" | "vine-pass" | "vine-fail" | "suppressed";
+  /** Who did it: a wallet address or an agent/seller name. */
+  actor: string;
+  /** What it was about: a listing title or a search query. */
+  subject: string;
+  /** Short result: "$0.02", "★ 5", "98/100", "3 hits". */
+  detail: string;
+  listingId?: string;
+  transaction?: string | null;
+}
+
+const EVENTS = "market:events";
+
+/** Records an activity event. Never throws: the feed must not break a purchase or a rating. */
+export async function logEvent(e: Omit<ActivityEvent, "id" | "at"> & { at?: string }): Promise<void> {
+  try {
+    await store().push(EVENTS, JSON.stringify({ ...e, at: e.at ?? new Date().toISOString(), id: `${Date.now().toString(36)}${randomBytes(3).toString("hex")}` }));
+  } catch (err) {
+    console.warn("[activity] could not log event:", String(err).slice(0, 120));
+  }
+}
+
+export async function listEvents(limit = 50): Promise<ActivityEvent[]> {
+  return (await store().range(EVENTS, limit)).map((s) => JSON.parse(s) as ActivityEvent);
 }
 
 /** A seller agent's public profile, keyed by the wallet it is paid to. */

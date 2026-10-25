@@ -1,6 +1,6 @@
 import "server-only";
 import { reliabilityByWallet, type SellerTier } from "./sellers";
-import { addRating, getListing, listListings, listPurchases, listRatings, relevance, updateListing, type Listing, type Purchase, type Rating } from "./store";
+import { logEvent, addRating, getListing, listListings, listPurchases, listRatings, relevance, updateListing, type Listing, type Purchase, type Rating } from "./store";
 
 // Synapsis's take on Amazon's playbook, for agent buyers:
 //  - Multi-signal ranking (A9): a composite trust score from seven signals, so no single number can be gamed.
@@ -108,11 +108,13 @@ export async function rateListing(input: { listingId: string; transaction: strin
   const existing = await listRatings(input.listingId);
   if (existing.some((r) => r.transaction === input.transaction)) throw new Error("This purchase has already been rated.");
   const rating = await addRating({ listingId: input.listingId, transaction: input.transaction, rating: input.rating, comment: (input.comment ?? "").slice(0, 500), rater: input.rater ?? purchase.payer });
+  await logEvent({ type: "rate", actor: rating.rater ?? "agent", subject: listing.title, detail: `★ ${rating.rating}`, listingId: listing.id, transaction: rating.transaction });
 
   // Suppress files that verified buyers consistently rate poorly (hidden from discovery, not deleted).
   const s = summarize([rating, ...existing]);
   if (s.count >= 3 && (s.average ?? 5) < 2 && listing.status !== "suppressed") {
     await updateListing({ ...listing, status: "suppressed", suppressedReason: `Verified Rating average ${s.average}★ over ${s.count} purchases` });
+    await logEvent({ type: "suppressed", actor: "synapsis", subject: listing.title, detail: `${s.average}★ avg`, listingId: listing.id });
   }
   return rating;
 }

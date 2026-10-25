@@ -1,7 +1,7 @@
 import "server-only";
 import { generateWithGemini } from "../ai/gemini";
 import { anchorMemo } from "./attest";
-import { getContent, getListing, updateListing, type Attestation, type Capabilities, type Listing } from "./store";
+import { getContent, getListing, logEvent, updateListing, type Attestation, type Capabilities, type Listing } from "./store";
 
 // Two jobs that make listings trustworthy before organic ratings exist:
 //  1. Rich structured metadata (capability signature, example I/O, outline): what agents read
@@ -186,5 +186,7 @@ export async function enrichAndReview(id: string): Promise<Listing> {
   };
   if (!failed && updated.suppressedReason?.startsWith("Vine")) updated.suppressedReason = undefined;
   await updateListing(updated);
+  await logEvent({ type: failed ? "vine-fail" : "vine-pass", actor: VINE_VERIFIER, subject: updated.title, detail: `${attestation.score}/100`, listingId: id, transaction: attestation.transaction });
+  if (failed && listing.status !== "suppressed") await logEvent({ type: "suppressed", actor: "synapsis", subject: updated.title, detail: "compliance", listingId: id });
   return updated;
 }

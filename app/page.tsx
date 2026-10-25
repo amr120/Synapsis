@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ExplorerLink, Led, Module, PageHeader } from "@/components/ui";
 import { BuyerConsole } from "@/components/market/BuyerConsole";
+import { LiveFeed } from "@/components/market/LiveFeed";
 import { SellerBadge } from "@/components/market/SellerBadge";
 import { SellerConsole } from "@/components/market/SellerConsole";
 import { rankListings } from "@/lib/market/ranking";
@@ -33,6 +34,8 @@ export default async function Market() {
         <div><span className="label">Recent volume</span><span className="metric">${volume.toFixed(2)}</span></div>
         <div><span className="label">Network</span><span className="metric metric--small">Solana devnet</span></div>
       </div>
+
+      <LiveFeed />
 
       <div id="ask" className="anchor"><BuyerConsole /></div>
 
