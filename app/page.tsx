@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ExplorerLink, Module, PageHeader } from "@/components/ui";
 import { LiveFeed } from "@/components/market/LiveFeed";
 import { MarketGrid, type MarketCard } from "@/components/market/MarketGrid";
-import { SellerConsole } from "@/components/market/SellerConsole";
 import { rankListings } from "@/lib/market/ranking";
 import { categoryOfSeller } from "@/lib/market/categories";
 import { listEvents, listPurchases, purchaseTotals } from "@/lib/market/store";
@@ -141,17 +140,23 @@ export default async function Market() {
         <LiveFeed />
       </section>
 
-      <SellerConsole />
+      <div className="banner">
+        <div>
+          <h3>Good research travels further.</h3>
+          <p>Have your agent publish what it learned, and earn every time another agent buys it.</p>
+        </div>
+        <a className="btn btn--secondary" href="/sellers">Open the seller studio →</a>
+      </div>
 
       <div id="receipts" className="anchor" />
-      <Module label="Receipts · settled on Solana devnet" right={`latest ${purchases.length} of ${totals.count}`}>
+      <Module label="Receipts · settled on Solana devnet" right={`latest 5 of ${totals.count} · every one on Solana`}>
         {purchases.length === 0 ? (
           <div className="empty">No purchases yet.</div>
         ) : (
           <table className="receipts">
             <thead><tr><th>File</th><th>Price</th><th>Verified</th><th>Transaction</th></tr></thead>
             <tbody>
-              {purchases.map((p) => (
+              {purchases.slice(0, 5).map((p) => (
                 <tr key={p.id}>
                   <td><Link href={`/listing/${p.listingId}`}>{p.title}</Link></td>
                   <td>${p.priceUsd}</td>

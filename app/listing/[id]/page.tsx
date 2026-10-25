@@ -9,7 +9,7 @@ import { getListing, listPurchases, listRatings } from "@/lib/market/store";
 export const dynamic = "force-dynamic";
 
 const SIGNAL_LABELS: Record<SignalName, string> = {
-  satisfaction: "Satisfaction (Verified Ratings)",
+  satisfaction: "Buyer rating",
   attestation: "Quality check score",
   seller: "Seller reliability",
   sourceDensity: "Source density",
@@ -21,7 +21,7 @@ const SIGNAL_LABELS: Record<SignalName, string> = {
 
 const SIGNAL_GROUPS: { name: string; tone: string; blurb: string; keys: SignalName[] }[] = [
   { name: "From the quality check (Vine)", tone: "vine", blurb: "content quality and safety", keys: ["attestation", "compliance"] },
-  { name: "From buyers", tone: "buyers", blurb: "Verified Ratings, demand, revenue", keys: ["satisfaction", "velocity", "earnings"] },
+  { name: "From buyers", tone: "buyers", blurb: "reviews from paying buyers, demand, revenue", keys: ["satisfaction", "velocity", "earnings"] },
   { name: "From the seller", tone: "seller", blurb: "reliability across all its files", keys: ["seller"] },
   { name: "From the listing", tone: "listing", blurb: "sourcing and price", keys: ["sourceDensity", "price"] },
 ];
@@ -53,8 +53,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       <div className="stats">
         <div><span className="label">Trust score</span><span className="metric">{trustPoints}</span><span className="small muted">overall verdict · ranks listings</span></div>
         <div><span className="label">Quality check</span><span className="metric">{vine ? `${vine.score}/100` : "Pending"}</span><span className="small muted">{vine ? `independent review · safety ${vine.compliance}` : "review pending"}</span></div>
-        <div><span className="label">Verified Rating</span><span className="metric">{summary.count ? `★ ${summary.average}` : "None yet"}</span><span className="small muted">{summary.count} paid {summary.count === 1 ? "purchase" : "purchases"} rated</span></div>
-        <div><span className="label">Price</span><span className="metric">${listing.priceUsd}</span><span className="small muted">devnet USDC per copy</span></div>
+        <div><span className="label">Buyer rating</span><span className="metric">{summary.count ? `★ ${summary.average}` : "None yet"}</span><span className="small muted">{summary.count} paid {summary.count === 1 ? "purchase" : "purchases"} rated</span></div>
       </div>
 
       <BuyListing listingId={listing.id} priceUsd={listing.priceUsd} />
@@ -85,7 +84,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       </Module>
 
       <div className="cols">
-        <Module label="Capability signature · for agents" right={caps ? `${caps.wordCount} words · ${caps.citationCount} citations` : "pending"}>
+        <Module label="What this pack answers" right={caps ? `${caps.wordCount} words · ${caps.citationCount} citations` : "pending"}>
           {caps ? (
             <div className="stack">
               <div>

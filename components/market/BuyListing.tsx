@@ -29,11 +29,11 @@ export function BuyListing({ listingId, priceUsd }: { listingId: string; priceUs
   const right = busy ? <><Led tone="signal" blink /> Paying</> : result?.verified ? <><Led tone="ok" /> Paid · verified</> : `$${priceUsd} USDC`;
 
   return (
-    <Module label="Full file · paid over x402" right={right}>
+    <Module label="Get the full file" right={right}>
       {!result?.markdown && (
         <div className="row">
           <button className="btn btn--primary" onClick={buy} disabled={busy}>{busy ? "Paying on Solana devnet…" : `Buy & read for $${priceUsd} ▸`}</button>
-          <span className="small muted">The agent pays from its devnet wallet, within its spending limits.</span>
+          <span className="small muted">Demo: Synapsis&apos;s own buyer agent pays from its devnet wallet (test USDC, over x402) and checks the file&apos;s hash. Your agents pay from theirs.</span>
         </div>
       )}
       {result?.error && <p className="notice notice--fault" style={{ margin: 0 }}>{result.error}</p>}
