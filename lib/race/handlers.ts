@@ -8,6 +8,14 @@ import { TaskError, type Task, type TaskOutput, type TaskRequest, type TaskType 
 // import { callTool, searchSource, ToolCallError } from "./tools";
 import { askGemini } from "../ai/gemini";
 import { runToolAgent } from "./agent";
+import { parsePaymentRequest, runPayment } from "./payment";
+
+const WORKFLOW_SYSTEM =
+  "You are Synapsis, an autonomous agent that completes multi-step workflows with the provided tools. " +
+  "Follow the steps the task requires in order (for example check inventory, then create a quote, then place the order). " +
+  "Use exact values from earlier tool results as inputs to later calls; never invent ids, prices or quantities. " +
+  "Never spend more than the task's budget: skip or reduce an order rather than exceed it. " +
+  "When done, reply with a short summary of what you did.";
 
 const RESPOND_SYSTEM =
   "You are Synapsis, a precise research agent. Answer the question correctly and directly. " +
@@ -62,5 +70,8 @@ export const handlers: Record<TaskType, Handler> = {
   // The on-chain payment stage also sends a run_workflow task ("Pay 0.01 devnet USDC to <address>
   // with the memo …"). With the payments module: payUsdc(await loadAgentSigner(), { to, amountUsdc, memo })
   // from ../payments/transfer, then return { data: { signature } }.
-  run_workflow: notYet("run_workflow", "handlers.run_workflow"),
+  run_workflow: (task) => {
+    const payment = parsePaymentRequest(task.input);
+    return payment ? runPayment(task, payment) : runToolAgent(task, WORKFLOW_SYSTEM);
+  },
 };
