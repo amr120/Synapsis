@@ -55,6 +55,8 @@ export interface BuyerRun {
 /** Where this server reaches its own API. The tunnel or public URL isn't needed for a self-call. */
 export function internalOrigin(): string {
   if (process.env.MARKET_ORIGIN) return process.env.MARKET_ORIGIN.replace(/\/+$/, "");
+  // On Vercel, per-deployment URLs sit behind deployment protection; call the public production domain.
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return `http://localhost:${process.env.PORT || 3000}`;
 }

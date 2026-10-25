@@ -1,0 +1,9 @@
+# Never upload local market data, wallet keys or secrets: Vercel gets env vars from its own settings
+.data
+.env
+.env.local
+.env.*.local
+*.keypair.json
+node_modules
+.next
+docs/corrections
