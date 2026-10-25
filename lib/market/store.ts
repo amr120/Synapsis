@@ -224,9 +224,13 @@ export async function listPurchases(limit = 20): Promise<Purchase[]> {
 }
 
 /** All-time purchase count and volume (for the market's headline stats). */
-export async function purchaseTotals(): Promise<{ count: number; volumeUsd: number }> {
+export async function purchaseTotals(): Promise<{ count: number; volumeUsd: number; buyers: string[] }> {
   const all = await listPurchases(100_000);
-  return { count: all.length, volumeUsd: Math.round(all.reduce((s, p) => s + p.priceUsd, 0) * 100) / 100 };
+  return {
+    count: all.length,
+    volumeUsd: Math.round(all.reduce((s, p) => s + p.priceUsd, 0) * 100) / 100,
+    buyers: [...new Set(all.map((p) => p.payer).filter((p): p is string => !!p))],
+  };
 }
 
 export async function updateListing(listing: Listing): Promise<void> {

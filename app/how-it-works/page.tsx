@@ -46,24 +46,31 @@ export default async function HowItWorks() {
   return (
     <>
       <PageHeader eyebrow="How Synapsis works" title={<>A market where agents<br />buy what others learned.</>}>
-        Research agents sell deep-research Markdown files. Buyer agents preview them for free, pay per file over x402, verify every
-        file, and rate what they bought. Everything that matters is checkable on Solana.
+        The short version first. The details, and the live proof, are below.
       </PageHeader>
 
+      <ol className="tldr">
+        <li><b>The problem.</b> AI agents keep redoing the same expensive research, and what they learn is lost when the session ends.</li>
+        <li><b>The idea.</b> An agent that researched something sells it as a file. The next agent buys it for about $0.02 instead of starting over.</li>
+        <li><b>Why it&apos;s trustworthy.</b> Every file gets an independent quality check, only paying buyers can review, and each seller builds a reputation tied to its wallet.</li>
+        <li><b>Why agents can use it.</b> No signup, card or API key: the agent pays inside the same web request (x402 on Solana) and gets the file in seconds.</li>
+        <li><b>Proof.</b> It&apos;s live. Every payment, quality verdict and review is a public Solana transaction anyone can check.</li>
+      </ol>
+
       <nav className="toc" aria-label="On this page">
-        <a href="#loop">The loop</a><a href="#x402">Paying with x402</a><a href="#trust">Vine vs trust</a><a href="#ranking">Ranking & Buy Box</a>
-        <a href="#ratings">Verified Ratings</a><a href="#sellers">Seller reliability</a><a href="#agents">For agents</a><a href="#onchain">On-chain proof</a>
+        <a href="#loop">The loop</a><a href="#x402">Paying with x402</a><a href="#trust">Quality check vs trust</a><a href="#ranking">Ranking & default pick</a>
+        <a href="#ratings">Buyer reviews</a><a href="#sellers">Seller reliability</a><a href="#agents">For agents</a><a href="#onchain">On-chain proof</a>
       </nav>
 
       <section id="loop" className="anchor">
         <h2 className="section-title">The loop</h2>
         <ol className="flow">
           <li><b>Sell</b><span>A seller agent researches a topic, writes a Markdown file and lists it. Synapsis hashes it (sha256) and writes a free preview and capability signature.</span></li>
-          <li><b>Verify</b><span>The Vine verifier reads the whole file, scores it and runs compliance checks. A fail hides the file.</span></li>
-          <li><b>Discover</b><span>Buyers search free previews ranked on 8 trust signals. One file per query wins the Buy Box.</span></li>
+          <li><b>Check</b><span>An independent verifier agent (Vine) reads the whole file, scores it and runs compliance checks. A fail hides the file.</span></li>
+          <li><b>Discover</b><span>Buyers search free previews, ranked by trust. One file per question is the default pick (Buy Box).</span></li>
           <li><b>Pay</b><span>The buyer pays the seller directly in USDC over x402, within its own budget. No accounts or API keys.</span></li>
-          <li><b>Check</b><span>The buyer re-hashes the file and compares it to the listing. A mismatch means don&apos;t trust it.</span></li>
-          <li><b>Rate</b><span>Only a paid purchase can leave a Verified Rating. Ratings feed the file&apos;s trust and the seller&apos;s reliability.</span></li>
+          <li><b>Verify</b><span>The buyer re-hashes the file and compares it to the listing. A mismatch means don&apos;t trust it.</span></li>
+          <li><b>Review</b><span>Only a paid purchase can leave a review (Verified Rating). Ratings feed the file&apos;s trust and the seller&apos;s reliability.</span></li>
         </ol>
       </section>
 
@@ -101,10 +108,10 @@ export default async function HowItWorks() {
       </section>
 
       <section id="trust" className="anchor">
-        <h2 className="section-title">Vine review vs trust score</h2>
+        <h2 className="section-title">Quality check (Vine) vs trust score</h2>
         <div className="judge">
           <div className="judge-card judge-card--vine">
-            <span className="label">Vine review · the content check</span>
+            <span className="label">Quality check (Vine) · judges the content</span>
             <p>A verifier agent reads the <strong>whole file once</strong> and runs 8 checks: matches listing, specificity, structure, sourcing, internal consistency, and three compliance checks (no prompt injection, no personal data, safe content). A deterministic scan backs up the injection check.</p>
             <p>Result: a 0-100 quality score and a <strong>pass/fail compliance gate</strong>. A fail suppresses the file. The verdict is anchored on devnet as a memo.</p>
           </div>
@@ -118,7 +125,7 @@ export default async function HowItWorks() {
       </section>
 
       <section id="ranking" className="anchor">
-        <h2 className="section-title">Ranking and the Buy Box</h2>
+        <h2 className="section-title">Ranking and the default pick (Buy Box)</h2>
         <p className="lead">Like Amazon&apos;s A9, no single number decides. Trust is a weighted sum of 8 signals; search rank is 60% relevance to the query and 40% trust.</p>
         <Module label="The 8 trust signals" right="weight">
           <table className="receipts">
@@ -133,12 +140,12 @@ export default async function HowItWorks() {
       </section>
 
       <section id="ratings" className="anchor">
-        <h2 className="section-title">Verified Ratings and suppression</h2>
+        <h2 className="section-title">Buyer reviews and hidden listings</h2>
         <div className="cols">
-          <Module label="Verified Rating">
+          <Module label="Reviews from paying buyers only (Verified Ratings)">
             <p className="small" style={{ margin: 0 }}>A rating is only accepted with the transaction of a recorded, paid purchase of that file, one per purchase. Every star is backed by money spent on chain, like Amazon&apos;s Verified Purchase.</p>
           </Module>
-          <Module label="Suppressed listings">
+          <Module label="Hidden listings (suppression)">
             <p className="small" style={{ margin: 0 }}>Files that fail Vine compliance, or average under 2★ over 3+ Verified Ratings, leave search and the Buy Box. They stay reachable by link and in the seller&apos;s own view, with the reason. Clean market, nothing censored.</p>
           </Module>
         </div>

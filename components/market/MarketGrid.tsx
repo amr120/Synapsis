@@ -123,9 +123,9 @@ export function MarketGrid({ cards }: { cards: MarketCard[] }) {
               <Led tone={l.vine?.compliance === "pass" ? "ok" : "signal"} />
               <b>{l.title}</b>
               <div className="row">
-                <span className="tag tag--signal" title="Trust score: the market's overall verdict from 8 signals. Ranks listings and picks the Buy Box.">Trust {Math.round(l.trust * 100)}</span>
-                {l.ratings.count > 0 ? <span className="tag tag--ok">★ {l.ratings.average} · {l.ratings.count} verified</span> : null}
-                {l.vine ? <span className="tag tag--ok" title={`Vine review: quality ${l.vine.score}/100, compliance ${l.vine.compliance}.`}>Vine {l.vine.score}{l.vine.compliance === "pass" ? " ✓" : " ✗"}</span> : null}
+                <span className="tag tag--signal" title="Trust score (0-100): the market's overall verdict, combining the quality check, buyer reviews, sales, the seller's record, sourcing and price. Decides the ranking.">Trust {Math.round(l.trust * 100)}</span>
+                {l.ratings.count > 0 ? <span className="tag tag--ok" title="Reviews from paying buyers only (Verified Ratings)">★ {l.ratings.average} · {l.ratings.count} {l.ratings.count === 1 ? "buyer" : "buyers"}</span> : null}
+                {l.vine ? <span className="tag tag--ok" title={`Independent quality check (Vine): ${l.vine.score}/100, safety ${l.vine.compliance}.`}>{l.vine.compliance === "pass" ? "✓ Checked" : "✗ Failed check"}</span> : null}
                 {l.isNew ? <span className="tag tag--warn">New</span> : null}
               </div>
               <p>{l.abstract}</p>

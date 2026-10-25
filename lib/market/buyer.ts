@@ -75,7 +75,7 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
     return run;
   }
   run.buyBox = box ? box.winner.listing.id : null;
-  log("buy box", box ? `Default pick "${box.winner.listing.title}" (trust ${box.winner.trust}). ${box.reason}` : "No Buy Box: no strongly relevant, compliant file");
+  log("default pick", box ? `Default pick "${box.winner.listing.title}" (trust ${box.winner.trust}). ${box.reason}` : "No default pick: no strongly relevant, checked file");
 
   const menu = candidates.map((r) => ({
     id: r.listing.id,
@@ -100,7 +100,7 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
     return run;
   }
   run.overrodeBuyBox = run.buyBox !== null && listing.id !== run.buyBox;
-  log("evaluate", `${run.overrodeBuyBox ? "Overrode the Buy Box, chose" : run.buyBox === listing.id ? "Took the Buy Box" : "Chose"} "${listing.title}" at $${listing.priceUsd}: ${run.reason}`);
+  log("evaluate", `${run.overrodeBuyBox ? "Overrode the default pick, chose" : run.buyBox === listing.id ? "Took the default pick" : "Chose"} "${listing.title}" at $${listing.priceUsd}: ${run.reason}`);
   run.chosen = listing;
 
   const result = await buyWithRetry(`${internalOrigin()}/api/listings/${listing.id}/content`);

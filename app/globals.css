@@ -321,3 +321,17 @@ select:focus { outline: none; border-color: rgba(139, 108, 255, 0.7); box-shadow
   .stats > div { padding: 14px 16px; }
   .metric { font-size: 26px; }
 }
+
+/* ---------- Plain-language story: 3 steps, proof line, TL;DR ---------- */
+.steps3 { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.steps3 li { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)); }
+.steps3 b { font-size: 19px; color: #fff; letter-spacing: -0.02em; }
+.steps3 p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); }
+.steps3 a { margin-top: auto; font-size: 13px; }
+.steps3-n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--mono); color: #fff; background: var(--accent); box-shadow: 0 0 18px rgba(139, 108, 255, 0.5); }
+.proof { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--text-2); }
+.proof b { color: #fff; }
+.proof .live-dot { margin-right: 4px; }
+.tldr { list-style: none; margin: 0; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; border-radius: var(--radius); border: 1px solid rgba(139, 108, 255, 0.3); background: linear-gradient(180deg, rgba(139, 108, 255, 0.08), rgba(45, 212, 238, 0.03)); font-size: 15.5px; line-height: 1.6; color: var(--text-2); }
+.tldr b { color: #fff; }
+@media (max-width: 720px) { .steps3 { grid-template-columns: 1fr; } }
