@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Synapsis storage: listings (public metadata), their Markdown (sold behind x402) and purchases.
@@ -118,19 +118,28 @@ function fileKv(): Kv {
   const dir = join(process.cwd(), ".data");
   const file = join(dir, "market.json");
   let data: { values: Record<string, string>; lists: Record<string, string[]> } | null = null;
+  let loadedMtime = -1;
+  // Next.js can load this module more than once (pages and API routes run as separate instances),
+  // so re-read the file whenever another instance has written it since we last looked.
   const load = () => {
-    if (!data) {
+    let mtime = 0;
+    try {
+      mtime = statSync(file).mtimeMs;
+    } catch {}
+    if (!data || mtime !== loadedMtime) {
       try {
         data = JSON.parse(readFileSync(file, "utf8"));
       } catch {
-        data = { values: {}, lists: {} };
+        data = data ?? { values: {}, lists: {} };
       }
+      loadedMtime = mtime;
     }
     return data!;
   };
   const save = () => {
     mkdirSync(dir, { recursive: true });
     writeFileSync(file, JSON.stringify(data));
+    loadedMtime = statSync(file).mtimeMs;
   };
   return {
     get: async (key) => load().values[key] ?? null,

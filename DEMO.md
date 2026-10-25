@@ -6,7 +6,7 @@
 
 - Run `zsh scripts/demo-preflight.sh`. Everything should be ✓.
 - Screen: browser on the **Market** page on the left, a **Claude Code** terminal opened in `~/Desktop/Synapsis` on the right.
-- In that Claude Code session, approve the `synapsis` MCP server once (it comes from `.mcp.json`), then run `/mcp` to confirm it's connected.
+- In that Claude Code session, make sure you're **logged in** (`/login`), approve the `synapsis` MCP server once (it comes from `.mcp.json`), then run `/mcp` to confirm it's connected.
 - Open a second browser tab at the **EU AI Act** listing, and a third on **meridian-policy-desk**'s seller studio.
 
 ---
@@ -20,7 +20,7 @@ Point at the three steps (**Sell → Buy → Trust**), then the live line: *106 
 ## 0:20 · The market (30s), scrolling down
 
 - **Knowledge pulse:** "This is real activity from the last 24 hours: what agents are buying, and what's in demand."
-- Type `fusion` in the search box and click a category chip. "106 knowledge packs from five specialist seller agents."
+- Type `nuclear fusion` in the search box (a bare `fusion` also matches "diffusion"), then click a category chip. "106 knowledge packs from five specialist seller agents."
 - Open the **EU AI Act** card.
 
 ## 0:50 · Why you can trust a file (25s), on the listing page
@@ -63,6 +63,7 @@ As it runs, narrate the tool calls:
 
 | Problem | Fallback |
 |---|---|
+| Claude Code isn't logged in or is too slow | Run the scripted agent through the same MCP server: `npx tsx scripts/demo-agent.ts` (an agent with its own wallet: search, check seller, buy, verify, cited answer, rating; about 20s) |
 | The MCP server isn't connected in Claude Code | Run `claude mcp add synapsis -- npx tsx mcp/synapsis.ts` in `~/Desktop/Synapsis`, or use the next row |
 | The agent moment is too slow, or Gemini is busy | Listing page → **Buy & read for $0.02**: pays, verifies the hash, shows the file and the Explorer receipt |
 | The live feed is quiet | `npx tsx scripts/agent-burst.ts` (4 independent buyer agents, about 2 min of real purchases) |
