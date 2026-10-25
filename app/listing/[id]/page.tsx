@@ -19,12 +19,21 @@ const SIGNAL_LABELS: Record<SignalName, string> = {
   price: "Price",
 };
 
+const SIGNAL_GROUPS: { name: string; tone: string; blurb: string; keys: SignalName[] }[] = [
+  { name: "From the Vine review", tone: "vine", blurb: "content quality and compliance", keys: ["attestation", "compliance"] },
+  { name: "From buyers", tone: "buyers", blurb: "Verified Ratings, demand, revenue", keys: ["satisfaction", "velocity", "earnings"] },
+  { name: "From the seller", tone: "seller", blurb: "reliability across all its files", keys: ["seller"] },
+  { name: "From the listing", tone: "listing", blurb: "sourcing and price", keys: ["sourceDensity", "price"] },
+];
+
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const listing = await getListing((await params).id);
   if (!listing) notFound();
   const [ratings, purchases, seller] = await Promise.all([listRatings(listing.id), listPurchases(500), getSeller(listing.sellerWallet)]);
   const signals = signalsFor(listing, ratings, purchases, seller ? seller.stats.reliability / 100 : 0.5);
   const trust = trustOf(signals);
+  const trustPoints = Math.round(trust * 100);
+  const groups = SIGNAL_GROUPS.map((g) => ({ ...g, points: g.keys.reduce((t, k) => t + signals[k] * WEIGHTS[k] * 100, 0), max: Math.round(g.keys.reduce((t, k) => t + WEIGHTS[k] * 100, 0)) }));
   const summary = summarize(ratings);
   const caps = listing.capabilities;
   const vine = listing.attestation;
@@ -42,25 +51,54 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
       )}
 
       <div className="stats">
-        <div><span className="label">Trust score</span><span className="metric">{Math.round(trust * 100)}</span></div>
+        <div><span className="label">Trust score</span><span className="metric">{trustPoints}</span><span className="small muted">overall verdict · ranks listings</span></div>
+        <div><span className="label">Vine review</span><span className="metric">{vine ? `${vine.score}/100` : "Pending"}</span><span className="small muted">{vine ? `content check · compliance ${vine.compliance}` : "content check pending"}</span></div>
         <div><span className="label">Verified Rating</span><span className="metric">{summary.count ? `★ ${summary.average}` : "None yet"}</span><span className="small muted">{summary.count} paid {summary.count === 1 ? "purchase" : "purchases"} rated</span></div>
-        <div><span className="label">Vine review</span><span className="metric">{vine ? `${vine.score}/100` : "Pending"}</span><span className="small muted">{vine ? `compliance ${vine.compliance}` : "new listing"}</span></div>
         <div><span className="label">Price</span><span className="metric">${listing.priceUsd}</span><span className="small muted">devnet USDC per copy</span></div>
       </div>
 
-      <div className="cols">
-        <Module label="Ranking signals · composite trust" right={`= ${trust.toFixed(3)}`}>
-          <div className="signals">
-            {(Object.keys(WEIGHTS) as SignalName[]).map((k) => (
-              <div key={k} className="signal">
-                <span>{SIGNAL_LABELS[k]}</span>
-                <span className="bar"><span style={{ width: `${Math.round(signals[k] * 100)}%` }} /></span>
-                <span className="mono small">{signals[k].toFixed(2)} × {WEIGHTS[k]}</span>
-              </div>
-            ))}
-          </div>
-        </Module>
+      <section className="judge" aria-label="How this file is judged">
+        <div className="judge-card judge-card--vine">
+          <span className="label">Vine review · the content check</span>
+          <span className="judge-value">{vine ? <>{vine.score}<small>/100</small> <span className={`tag ${vine.compliance === "pass" ? "tag--ok" : "tag--fault"}`}>{vine.compliance === "pass" ? "Compliance pass" : "Compliance fail"}</span></> : "Pending"}</span>
+          <p>A verifier agent reads the <strong>whole file once</strong> and runs 8 checks: accuracy to the listing, specificity, structure, sourcing, consistency, and three safety checks. Compliance is a <strong>gate</strong>: a fail hides the file.</p>
+          <div className="row"><span className="tag">Judges the content</span><span className="tag">Set at listing</span><span className="tag">Anchored on devnet</span></div>
+        </div>
+        <div className="judge-arrow" aria-hidden="true"><span>feeds up to</span><b>30%</b><span>of trust →</span></div>
+        <div className="judge-card judge-card--trust">
+          <span className="label">Trust score · the market&apos;s verdict</span>
+          <span className="judge-value">{trustPoints}<small>/100</small></span>
+          <p>Combines the Vine review with <strong>evidence from the market</strong>: paying buyers&apos; Verified Ratings, sales and demand, the seller&apos;s reliability, sourcing and price. Recomputed live; it <strong>ranks listings and picks the Buy Box</strong>.</p>
+          <div className="row"><span className="tag">Judges the listing</span><span className="tag">Changes with every sale</span><span className="tag">8 signals</span></div>
+        </div>
+      </section>
 
+      <Module label={`What makes up trust ${trustPoints}`} right="points out of 100">
+        <div className="trust-stack" role="img" aria-label={groups.map((g) => `${g.name} ${g.points.toFixed(1)}`).join(", ")}>
+          {groups.map((g) => <span key={g.name} className={`seg seg--${g.tone}`} style={{ width: `${g.points}%` }} title={`${g.name}: ${g.points.toFixed(1)} points`} />)}
+        </div>
+        <div className="trust-legend">
+          {groups.map((g) => (
+            <span key={g.name}><i className={`dot seg--${g.tone}`} />{g.name} <b>{g.points.toFixed(1)}</b><span className="muted"> / {g.max}</span></span>
+          ))}
+        </div>
+        <div className="signals">
+          {groups.map((g) => (
+            <div key={g.name} className="signal-group">
+              <div className="signal-group-head"><i className={`dot seg--${g.tone}`} />{g.name}<span className="muted small">{g.blurb}</span></div>
+              {g.keys.map((k) => (
+                <div key={k} className="signal">
+                  <span>{SIGNAL_LABELS[k]}</span>
+                  <span className="bar"><span className={`seg--${g.tone}`} style={{ width: `${Math.round(signals[k] * 100)}%` }} /></span>
+                  <span className="mono small">{(signals[k] * WEIGHTS[k] * 100).toFixed(1)} / {WEIGHTS[k] * 100}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </Module>
+
+      <div className="cols">
         <Module label="Capability signature · for agents" right={caps ? `${caps.wordCount} words · ${caps.citationCount} citations` : "pending"}>
           {caps ? (
             <div className="stack">

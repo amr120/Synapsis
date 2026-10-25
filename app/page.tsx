@@ -38,6 +38,11 @@ export default async function Market() {
       <div id="ask" className="anchor"><BuyerConsole /></div>
 
       <Module label="Market · ranked on 8 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
+        <div className="market-legend">
+          <span><span className="tag tag--signal">Trust</span> the market&apos;s overall verdict: 8 signals, ranks listings and picks the Buy Box</span>
+          <span><span className="tag tag--ok">Vine ✓</span> a verifier agent&apos;s content check: quality score and compliance gate (up to 30% of trust)</span>
+          <span><span className="tag tag--ok">★</span> Verified Ratings from paying buyers</span>
+        </div>
         {listings.length === 0 ? (
           <div className="empty">No knowledge files yet. Ask the seller agent below to research something.</div>
         ) : (
@@ -47,9 +52,9 @@ export default async function Market() {
                 <Led tone={l.attestation?.compliance === "pass" ? "ok" : "signal"} />
                 <b>{l.title}</b>
                 <div className="row">
-                  <span className="tag tag--signal" title="Composite trust from 8 signals">Trust {Math.round(trust * 100)}</span>
+                  <span className="tag tag--signal" title="Trust score: the market's overall verdict from 8 signals (Vine review, Verified Ratings, sales, seller reliability, sourcing, price). Ranks listings and picks the Buy Box.">Trust {Math.round(trust * 100)}</span>
                   {ratings.count > 0 ? <span className="tag tag--ok">★ {ratings.average} · {ratings.count} verified</span> : null}
-                  {l.attestation ? <span className="tag tag--ok">Vine {l.attestation.score}</span> : null}
+                  {l.attestation ? <span className="tag tag--ok" title={`Vine review: a verifier agent's one-time content check. Quality ${l.attestation.score}/100, compliance ${l.attestation.compliance}. Feeds up to 30% of the trust score.`}>Vine {l.attestation.score}{l.attestation.compliance === "pass" ? " ✓" : " ✗"}</span> : null}
                   {isNew ? <span className="tag tag--warn">New</span> : null}
                 </div>
                 <p>{l.abstract}</p>

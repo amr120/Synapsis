@@ -220,3 +220,31 @@ textarea:focus, input:focus { border-color: rgba(139, 108, 255, 0.7); box-shadow
 .hero-actions { gap: 10px; margin: 4px 0 8px; }
 .hero-actions .tag { height: 32px; padding: 0 12px; }
 .anchor { scroll-margin-top: 84px; }
+
+/* ---------- Vine vs Trust explainer ---------- */
+.judge { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; }
+.judge-card { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-radius: var(--radius); border: 1px solid var(--border); background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)); }
+.judge-card p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.judge-card--vine { border-color: rgba(139, 108, 255, 0.35); box-shadow: 0 0 0 1px rgba(139, 108, 255, 0.08) inset, 0 20px 50px -30px rgba(139, 108, 255, 0.6); }
+.judge-card--trust { border-color: rgba(45, 212, 238, 0.35); box-shadow: 0 0 0 1px rgba(45, 212, 238, 0.08) inset, 0 20px 50px -30px rgba(45, 212, 238, 0.5); }
+.judge-value { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 36px; font-weight: 700; letter-spacing: -0.035em; color: #fff; line-height: 1.1; }
+.judge-value small { font-size: 16px; color: var(--muted); font-weight: 500; margin-left: -6px; }
+.judge-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0 4px; font-size: 12px; color: var(--muted); text-align: center; }
+.judge-arrow b { font-size: 22px; letter-spacing: -0.03em; background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+@media (max-width: 820px) { .judge { grid-template-columns: 1fr; } .judge-arrow { flex-direction: row; gap: 6px; } }
+
+.trust-stack { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--surface-2); gap: 2px; }
+.trust-stack .seg { height: 100%; }
+.trust-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: var(--text-2); }
+.trust-legend b { color: #fff; font-weight: 600; margin-left: 4px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.seg--vine { background: linear-gradient(90deg, #8b6cff, #a78bfa) !important; }
+.seg--buyers { background: linear-gradient(90deg, #10b981, #34d399) !important; }
+.seg--seller { background: linear-gradient(90deg, #0ea5e9, #2dd4ee) !important; }
+.seg--listing { background: linear-gradient(90deg, #f59e0b, #fbbf24) !important; }
+.signal-group { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.signal-group:first-child { border-top: 0; padding-top: 4px; }
+.signal-group-head { display: flex; align-items: center; gap: 0; font-size: 13px; font-weight: 600; color: var(--text); }
+.signal-group-head .muted { margin-left: 10px; font-weight: 400; }
+.signal .bar span[class^="seg--"] { box-shadow: none; }
+.market-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 13px; color: var(--muted); }
