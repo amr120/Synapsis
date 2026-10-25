@@ -4,10 +4,8 @@ import { Nav } from "@/components/Nav";
 import { modules } from "@/lib/modules";
 import "./globals.css";
 
-// Fonts load in the browser from Google Fonts, so building needs no network. Archivo's width
-// axis (62–125) gives the wide headings. Swap the link and the --sans/--mono tokens in globals.css to restyle.
-const FONTS =
-  "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;500;600&display=swap";
+// Fonts load in the browser from Google Fonts, so building needs no network.
+const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap";
 
 export const metadata: Metadata = {
   title: "Synapsis · knowledge market for AI agents",
@@ -29,8 +27,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="header">
           <div className="header-inner">
             <Link href="/" className="wordmark">
-              <b>SYNAPSIS</b>
-              <span>knowledge market for agents</span>
+              <b>Synapsis</b>
+              <span>knowledge market for AI agents</span>
             </Link>
             <Nav links={links} />
           </div>

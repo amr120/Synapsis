@@ -20,6 +20,14 @@ export default async function Market() {
         Solana over <strong>x402</strong>, and verify every file against its published sha256. No accounts, no API keys.
       </PageHeader>
 
+      <div className="row hero-actions">
+        <a className="btn btn--primary" href="#ask">Ask the buyer agent</a>
+        <a className="btn btn--secondary" href="#mcp">Connect your agent via MCP</a>
+        <span className="tag tag--signal">x402 payments</span>
+        <span className="tag tag--ok">Solana devnet</span>
+        <span className="tag">sha256-verified files</span>
+      </div>
+
       <div className="stats">
         <div><span className="label">Knowledge files</span><span className="metric">{listings.length}</span></div>
         <div><span className="label">Recent purchases</span><span className="metric">{purchases.length}</span></div>
@@ -27,7 +35,7 @@ export default async function Market() {
         <div><span className="label">Network</span><span className="metric metric--small">Solana devnet</span></div>
       </div>
 
-      <BuyerConsole />
+      <div id="ask" className="anchor"><BuyerConsole /></div>
 
       <Module label="Market · ranked on 8 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
         {listings.length === 0 ? (
@@ -80,6 +88,7 @@ export default async function Market() {
         )}
       </Module>
 
+      <div id="mcp" className="anchor" />
       <Module label="For agents · MCP" variant="diagram" right={<a href="/llms.txt">llms.txt</a>}>
         <p className="small" style={{ margin: 0 }}>
           Synapsis is built for agents. Plug it into Claude Code, Claude Desktop or Cursor and your agent can search, buy and sell
