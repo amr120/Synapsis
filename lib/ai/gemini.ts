@@ -24,10 +24,26 @@ export class MissingGeminiKeyError extends Error {
 }
 
 export async function askGemini(prompt: string, options: { system?: string } = {}): Promise<string> {
-  const response = await getClient().models.generateContent({
-    model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
-    contents: prompt,
-    config: options.system ? { systemInstruction: options.system } : undefined,
-  });
+  const response = await withRetry(() =>
+    getClient().models.generateContent({
+      model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+      contents: prompt,
+      config: options.system ? { systemInstruction: options.system } : undefined,
+    }),
+  );
   return response.text ?? "";
+}
+
+/** Retries network drops and 429/5xx from Gemini with a short backoff; other errors fail at once. */
+async function withRetry<T>(call: () => Promise<T>, attempts = 3): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await call();
+    } catch (e) {
+      const status = (e as { status?: number }).status;
+      const transient = e instanceof TypeError || status === 429 || (status !== undefined && status >= 500);
+      if (!transient || i >= attempts) throw e;
+      await new Promise((r) => setTimeout(r, 400 * i));
+    }
+  }
 }
