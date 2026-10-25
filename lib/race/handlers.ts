@@ -7,6 +7,7 @@
 import { TaskError, type Task, type TaskOutput, type TaskRequest, type TaskType } from "./protocol";
 // import { callTool, searchSource, ToolCallError } from "./tools";
 import { askGemini } from "../ai/gemini";
+import { runToolAgent } from "./agent";
 
 const RESPOND_SYSTEM =
   "You are Synapsis, a precise research agent. Answer the question correctly and directly. " +
@@ -47,7 +48,7 @@ export const handlers: Record<TaskType, Handler> = {
   // Tool Calling and Reliability: decide which of task.tools to call (callTool), use their results
   // in your answer, and report them in output.toolResults. Map tool failures to
   // upstream_unavailable / upstream_timeout.
-  use_tools: notYet("use_tools", "handlers.use_tools"),
+  use_tools: (task) => runToolAgent(task),
 
   // External Knowledge: answer from task.source (searchSource) and cite the document ids you used.
   answer_from_source: notYet("answer_from_source", "handlers.answer_from_source"),

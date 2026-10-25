@@ -1,5 +1,5 @@
 import "server-only";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, type GenerateContentParameters, type GenerateContentResponse } from "@google/genai";
 
 // `server-only` makes the build fail if a client component imports this file,
 // so GEMINI_API_KEY can never end up in browser JavaScript.
@@ -32,6 +32,11 @@ export async function askGemini(prompt: string, options: { system?: string } = {
     }),
   );
   return response.text ?? "";
+}
+
+/** Raw generateContent (model defaulted, retries included), for multi-turn and function calling. */
+export async function generateWithGemini(params: Omit<GenerateContentParameters, "model">): Promise<GenerateContentResponse> {
+  return withRetry(() => getClient().models.generateContent({ model: process.env.GEMINI_MODEL || DEFAULT_MODEL, ...params }));
 }
 
 /** Retries network drops and 429/5xx from Gemini with a short backoff; other errors fail at once. */
