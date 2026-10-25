@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { withX402 } from "@x402/next";
 import { getNetwork } from "../payments/config";
-import { getResourceServer } from "../payments/server";
+import { getResourceServer, resetResourceServer } from "../payments/server";
 import { getContent, type Listing } from "./store";
 
 // Each listing has its own price and seller wallet, so each gets its own x402 wrapper (cached).
@@ -11,8 +11,26 @@ import { getContent, type Listing } from "./store";
 type Handler = (request: NextRequest) => Promise<NextResponse>;
 const wrapped = new Map<string, Handler>();
 
+/**
+ * The paywalled handler for a listing. If the facilitator can't be reached (flaky networks), the
+ * wrapper and facilitator client are dropped so the next request reconnects, and the caller gets a
+ * retryable 503 instead of a cached failure.
+ */
 export function contentHandler(listing: Listing): Handler {
-  const key = `${listing.id}:${listing.priceUsd}:${listing.sellerWallet}`;
+  return async (request) => {
+    const key = `${listing.id}:${listing.priceUsd}:${listing.sellerWallet}`;
+    try {
+      return await wrappedHandler(listing, key)(request);
+    } catch (err) {
+      wrapped.clear();
+      resetResourceServer();
+      console.warn("[paywall] facilitator error, will reconnect:", String(err).slice(0, 160));
+      return NextResponse.json({ error: "Payment facilitator unreachable, please retry", retryable: true }, { status: 503, headers: { "retry-after": "2" } });
+    }
+  };
+}
+
+function wrappedHandler(listing: Listing, key: string): Handler {
   let handler = wrapped.get(key);
   if (!handler) {
     handler = withX402(

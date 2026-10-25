@@ -11,6 +11,11 @@ import { getFacilitatorUrl, getNetwork, getPayToAddress, PaymentsConfigError } f
 
 let resourceServer: x402ResourceServer | null = null;
 
+/** Drops the facilitator client so the next request reconnects (e.g. after a network timeout). */
+export function resetResourceServer(): void {
+  resourceServer = null;
+}
+
 export function getResourceServer(): x402ResourceServer {
   resourceServer ??= new x402ResourceServer(
     new HTTPFacilitatorClient({ url: getFacilitatorUrl() }),

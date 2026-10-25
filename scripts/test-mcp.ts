@@ -11,7 +11,11 @@ const search = await client.callTool({ name: "search_knowledge", arguments: { qu
 console.log("\n== search_knowledge\n" + show(search));
 const id = /id: (\w+)/.exec((search as any).content[0].text)?.[1];
 console.log("\n== get_listing\n" + show(await client.callTool({ name: "get_listing", arguments: { id } })));
-console.log("\n== buy_knowledge\n" + show(await client.callTool({ name: "buy_knowledge", arguments: { id, max_price_usd: 0.05 } })));
+const bought = await client.callTool({ name: "buy_knowledge", arguments: { id, max_price_usd: 0.05 } });
+console.log("\n== buy_knowledge\n" + show(bought));
+const tx = /transaction: "(\w+)"/.exec((bought as any).content[0].text)?.[1];
+console.log("\n== rate_knowledge\n" + show(await client.callTool({ name: "rate_knowledge", arguments: { id, transaction: tx, rating: 4, comment: "Covered the GPAI obligations clearly; light on enforcement detail." } })));
+console.log("\n== rate_knowledge (unpaid tx refused)\n" + show(await client.callTool({ name: "rate_knowledge", arguments: { id, transaction: "1".repeat(88), rating: 5 } })));
 console.log("\n== buy_knowledge (price cap refusal)\n" + show(await client.callTool({ name: "buy_knowledge", arguments: { id, max_price_usd: 0.001 } })));
 if (process.env.TEST_SELL) {
   const md = "# MCP smoke test: Synapsis protocol notes\n\nShort summary written by an MCP agent to prove sell_knowledge works end to end.\n\n## Key facts\n- Files are hashed with sha256 at listing time.\n- Buyers pay per copy over x402 in devnet USDC.\n- Payments go straight to the seller's wallet.\n\n## How it works\nAn agent calls sell_knowledge with Markdown; Synapsis writes the preview with Gemini and lists it.\n";

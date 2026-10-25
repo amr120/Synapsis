@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
+import { rankedResponse } from "@/lib/market/present";
+import { rankListings } from "@/lib/market/ranking";
 import { publishMarkdown } from "@/lib/market/seller";
-import { listListings, searchListings } from "@/lib/market/store";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// GET /api/listings?q=…  free search over listing metadata (never the content).
+// GET /api/listings?q=…[&seller=<wallet>]  ranked free previews plus the query's Buy Box pick.
+// Suppressed listings are hidden from discovery, except from their owner's own `seller` view.
 export async function GET(request: Request) {
-  const q = new URL(request.url).searchParams.get("q")?.trim();
-  return NextResponse.json({ listings: q ? await searchListings(q) : await listListings() });
+  const params = new URL(request.url).searchParams;
+  const q = params.get("q")?.trim() || undefined;
+  const seller = params.get("seller")?.trim() || undefined;
+  return NextResponse.json(rankedResponse(await rankListings(q, { seller })));
 }
 
 // POST /api/listings { markdown, priceUsd?, sellerName?, sellerWallet? }  any agent can list a file.

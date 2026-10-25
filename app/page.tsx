@@ -2,12 +2,14 @@ import Link from "next/link";
 import { ExplorerLink, Led, Module, PageHeader } from "@/components/ui";
 import { BuyerConsole } from "@/components/market/BuyerConsole";
 import { SellerConsole } from "@/components/market/SellerConsole";
-import { listListings, listPurchases } from "@/lib/market/store";
+import { rankListings } from "@/lib/market/ranking";
+import { listPurchases } from "@/lib/market/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function Market() {
-  const [listings, purchases] = await Promise.all([listListings(), listPurchases(12)]);
+  const [ranked, purchases] = await Promise.all([rankListings(), listPurchases(12)]);
+  const listings = ranked.map((r) => r.listing);
   const volume = purchases.reduce((s, p) => s + p.priceUsd, 0);
 
   return (
@@ -26,19 +28,22 @@ export default async function Market() {
 
       <BuyerConsole />
 
-      <Module label="Market · free previews" right={<><Led tone="ok" /> {listings.length} listed</>}>
+      <Module label="Market · ranked on 7 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
         {listings.length === 0 ? (
           <div className="empty">No knowledge files yet. Ask the seller agent below to research something.</div>
         ) : (
           <div className="keys">
-            {listings.map((l) => (
+            {ranked.map(({ listing: l, trust, ratings, isNew }) => (
               <Link key={l.id} href={`/listing/${l.id}`} className="key listing">
-                <Led tone="signal" />
+                <Led tone={l.attestation?.compliance === "pass" ? "ok" : "signal"} />
                 <b>{l.title}</b>
-                <p>{l.abstract}</p>
                 <div className="row">
-                  {l.tags.slice(0, 3).map((t) => <span key={t} className="tag">{t}</span>)}
+                  <span className="tag tag--signal" title="Composite trust from 7 signals">Trust {Math.round(trust * 100)}</span>
+                  {ratings.count > 0 ? <span className="tag tag--ok">★ {ratings.average} · {ratings.count} verified</span> : null}
+                  {l.attestation ? <span className="tag tag--ok">Vine {l.attestation.score}</span> : null}
+                  {isNew ? <span className="tag tag--warn">New</span> : null}
                 </div>
+                <p>{l.abstract}</p>
                 <div className="listing-foot">
                   <span>${l.priceUsd} USDC</span>
                   <span>{(l.bytes / 1024).toFixed(1)} KB</span>

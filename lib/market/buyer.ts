@@ -2,7 +2,8 @@ import "server-only";
 import { askGemini, generateWithGemini } from "../ai/gemini";
 import { buy } from "../paidapi/buyer";
 import { getSpendingTracker } from "../paidapi/buyer";
-import { listListings, recordPurchase, searchListings, sha256, type Listing } from "./store";
+import { buyBox, rankListings, rateListing, WEIGHTS } from "./ranking";
+import { recordPurchase, sha256, type Listing } from "./store";
 
 // The buyer agent: given a question, it searches Synapsis, judges the free abstracts, buys the
 // best file over x402 (within its spending limits), checks the file's hash against the listing,
@@ -15,6 +16,12 @@ const CHOOSE_SCHEMA = {
     reason: { type: "string", description: "one sentence: why this listing (or why none)" },
   },
   required: ["listingId", "reason"],
+};
+
+const RATE_SCHEMA = {
+  type: "object",
+  properties: { rating: { type: "integer", description: "1-5" }, comment: { type: "string" } },
+  required: ["rating", "comment"],
 };
 
 const ANSWER_SYSTEM =
@@ -38,6 +45,9 @@ export interface BuyerRun {
   verified: boolean;
   answer: string | null;
   spentUsd: string | null;
+  buyBox?: string | null;
+  overrodeBuyBox?: boolean;
+  rating?: number;
   error?: string;
 }
 
@@ -52,31 +62,45 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
   const run: BuyerRun = { question, steps: [], candidates: [], chosen: null, reason: "", transaction: null, payer: null, verified: false, answer: null, spentUsd: null };
   const log = (step: string, detail: string) => run.steps.push({ step, detail });
 
-  let candidates = await searchListings(question);
-  if (candidates.length === 0) candidates = await listListings(15);
-  run.candidates = candidates.map(({ id, title, priceUsd }) => ({ id, title, priceUsd }));
-  log("search", `${candidates.length} listing${candidates.length === 1 ? "" : "s"} matched "${question}"`);
+  const ranked = await rankListings(question);
+  const box = buyBox(ranked);
+  const candidates = ranked.slice(0, 6);
+  run.candidates = candidates.map(({ listing: { id, title, priceUsd } }) => ({ id, title, priceUsd }));
+  log("search", `${ranked.length} listing${ranked.length === 1 ? "" : "s"} matched "${question}", ranked on ${Object.keys(WEIGHTS).length} signals`);
   if (candidates.length === 0) {
-    run.reason = "The market has no listings yet.";
+    run.reason = "No listing matches the question.";
     return run;
   }
+  run.buyBox = box ? box.winner.listing.id : null;
+  log("buy box", box ? `Default pick "${box.winner.listing.title}" (trust ${box.winner.trust}). ${box.reason}` : "No Buy Box: no strongly relevant, compliant file");
 
-  const menu = candidates.map((l) => ({ id: l.id, title: l.title, abstract: l.abstract, tags: l.tags, priceUsd: l.priceUsd, sources: l.sources.length }));
+  const menu = candidates.map((r) => ({
+    id: r.listing.id,
+    title: r.listing.title,
+    abstract: r.listing.abstract,
+    answers: r.listing.capabilities?.answers ?? [],
+    priceUsd: r.listing.priceUsd,
+    trust: r.trust,
+    verifiedRating: r.ratings,
+    vineScore: r.listing.attestation?.score ?? null,
+    buyBox: r.listing.id === run.buyBox,
+  }));
   const choice = await generateWithGemini({
-    contents: `Question: ${question}\n\nListings (free previews):\n${JSON.stringify(menu, null, 1)}\n\nPick the single listing most likely to answer the question, or null if none will. Prefer relevance, then more sources, then lower price.`,
+    contents: `Question: ${question}\n\nRanked listings (free previews with trust signals):\n${JSON.stringify(menu, null, 1)}\n\nDefault to the Buy Box listing. Override it only if another listing clearly answers the question better, and return null if none will answer it.`,
     config: { responseMimeType: "application/json", responseJsonSchema: CHOOSE_SCHEMA },
   });
   const picked = JSON.parse(choice.text ?? "{}") as { listingId: string | null; reason: string };
   run.reason = picked.reason ?? "";
-  const listing = candidates.find((l) => l.id === picked.listingId) ?? null;
+  const listing = candidates.find((r) => r.listing.id === picked.listingId)?.listing ?? null;
   if (!listing) {
     log("evaluate", `No listing worth buying: ${run.reason}`);
     return run;
   }
+  run.overrodeBuyBox = run.buyBox !== null && listing.id !== run.buyBox;
+  log("evaluate", `${run.overrodeBuyBox ? "Overrode the Buy Box, chose" : run.buyBox === listing.id ? "Took the Buy Box" : "Chose"} "${listing.title}" at $${listing.priceUsd}: ${run.reason}`);
   run.chosen = listing;
-  log("evaluate", `Chose "${listing.title}" at $${listing.priceUsd}: ${run.reason}`);
 
-  const result = await buy(`${internalOrigin()}/api/listings/${listing.id}/content`);
+  const result = await buyWithRetry(`${internalOrigin()}/api/listings/${listing.id}/content`);
   run.spentUsd = result.spending.spentUsd;
   if (result.status !== 200) {
     run.error = result.paymentError ? `Payment rejected: ${result.paymentError}` : `Content request returned HTTP ${result.status}`;
@@ -105,6 +129,22 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
     question,
     verified: run.verified,
   });
+
+  // Verified Rating: the agent rates what it paid for, bound to the purchase transaction.
+  if (run.answer && run.transaction) {
+    try {
+      const judged = await generateWithGemini({
+        contents: `Question: ${question}\n\nAnswer produced from the purchased file:\n${run.answer}\n\nRate 1-5 how well the purchased file answered the question, with a one-sentence comment.`,
+        config: { responseMimeType: "application/json", responseJsonSchema: RATE_SCHEMA },
+      });
+      const r = JSON.parse(judged.text ?? "{}") as { rating: number; comment: string };
+      const rating = await rateListing({ listingId: listing.id, transaction: run.transaction, rating: Math.max(1, Math.min(5, Math.round(r.rating))), comment: r.comment, rater: run.payer });
+      run.rating = rating.rating;
+      log("rate", `Verified Rating ${rating.rating}★: ${rating.comment}`);
+    } catch (err) {
+      log("rate", `Could not rate: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
   return run;
 }
 
@@ -119,7 +159,7 @@ export interface ListingPurchase {
 
 /** Buys one specific listing (the "Buy & read" button): pay over x402, then verify the hash. */
 export async function buyListing(listing: Listing): Promise<ListingPurchase> {
-  const result = await buy(`${internalOrigin()}/api/listings/${listing.id}/content`);
+  const result = await buyWithRetry(`${internalOrigin()}/api/listings/${listing.id}/content`);
   if (result.status !== 200) {
     const error = result.paymentError ? `Payment rejected: ${result.paymentError}` : `Content request returned HTTP ${result.status}`;
     return { listing, markdown: null, verified: false, transaction: null, spentUsd: result.spending.spentUsd, error };
@@ -129,6 +169,16 @@ export async function buyListing(listing: Listing): Promise<ListingPurchase> {
   const transaction = result.receipt?.transaction ?? null;
   await recordPurchase({ listingId: listing.id, title: listing.title, priceUsd: listing.priceUsd, transaction, payer: result.receipt?.payer ?? null, question: null, verified });
   return { listing, markdown, verified, transaction, spentUsd: result.spending.spentUsd };
+}
+
+/** The paywall answers 5xx when the facilitator is briefly unreachable (nothing is charged): retry. */
+async function buyWithRetry(url: string) {
+  let result = await buy(url);
+  for (let attempt = 1; result.status >= 500 && attempt <= 2; attempt++) {
+    await new Promise((r) => setTimeout(r, 2000 * attempt));
+    result = await buy(url);
+  }
+  return result;
 }
 
 export function buyerSpending() {

@@ -47,6 +47,15 @@ interface Listing {
   sources: { title: string; url: string }[];
   createdAt: string;
   sales: number;
+  trust?: number;
+  signals?: Record<string, number>;
+  verifiedRating?: { count: number; average: number | null };
+  isNew?: boolean;
+  buyBox?: boolean;
+  status?: string;
+  suppressedReason?: string;
+  capabilities?: { answers: string[]; examples: { input: string; output: string }[]; outline: string[]; wordCount: number; citationCount: number };
+  attestation?: { verifier: string; score: number; compliance: string; summary: string; checks: { name: string; pass: boolean; note: string }[]; transaction: string | null };
 }
 
 // ---------- wallet + x402 client with a session budget ----------
@@ -88,8 +97,10 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const fail = (e: unknown) => ({ ...text(`Error: ${e instanceof Error ? e.message : String(e)}`), isError: true });
+const stars = (l: Listing) => (l.verifiedRating?.count ? `${l.verifiedRating.average}★ (${l.verifiedRating.count} Verified Ratings)` : "no Verified Ratings yet");
+const vine = (l: Listing) => (l.attestation ? `Vine ${l.attestation.score}/100, compliance ${l.attestation.compliance}` : "awaiting Vine review (new)");
 const preview = (l: Listing) =>
-  `- id: ${l.id}\n  title: ${l.title}\n  price: $${l.priceUsd} USDC · ${(l.bytes / 1024).toFixed(1)} KB · ${l.sales} sold · ${l.sources.length} sources\n  tags: ${l.tags.join(", ")}\n  abstract: ${l.abstract}`;
+  `- id: ${l.id}${l.buyBox ? "  ← BUY BOX (default pick)" : ""}\n  title: ${l.title}\n  price: $${l.priceUsd} USDC · ${l.trust !== undefined ? `trust ${l.trust} · ` : ""}${stars(l)} · ${vine(l)} · ${l.sales} sold\n  answers: ${(l.capabilities?.answers ?? []).slice(0, 3).join(" | ") || "n/a"}\n  abstract: ${l.abstract}`;
 
 // ---------- server ----------
 const server = new McpServer(
@@ -112,9 +123,10 @@ server.registerTool(
   },
   async ({ query }) => {
     try {
-      const { listings } = await api<{ listings: Listing[] }>(`/api/listings?q=${encodeURIComponent(query)}`);
+      const { listings, buyBox } = await api<{ listings: Listing[]; buyBox: { id: string; title: string; reason: string } | null }>(`/api/listings?q=${encodeURIComponent(query)}`);
       if (listings.length === 0) return text(`No knowledge files match "${query}". Consider researching it yourself and selling the result with sell_knowledge.`);
-      return text(`${listings.length} knowledge file(s) for "${query}":\n\n${listings.map(preview).join("\n\n")}\n\nUse get_listing for details or buy_knowledge to purchase.`);
+      const head = buyBox ? `Buy Box: "${buyBox.title}" (id ${buyBox.id}). ${buyBox.reason} Buy it unless another listing clearly fits better.` : "No Buy Box for this query (no strongly relevant, compliant file): judge the previews.";
+      return text(`${head}\n\n${listings.length} knowledge file(s), ranked on 7 trust signals:\n\n${listings.slice(0, 8).map(preview).join("\n\n")}\n\nUse get_listing for full metadata, buy_knowledge to purchase.`);
     } catch (e) {
       return fail(e);
     }
@@ -131,7 +143,22 @@ server.registerTool(
   async ({ id }) => {
     try {
       const l = await api<Listing>(`/api/listings/${encodeURIComponent(id)}`);
-      return text(`${preview(l)}\n  seller: ${l.sellerName} (${l.sellerWallet})\n  sha256: ${l.sha256}\n  listed: ${l.createdAt}${l.sources.length ? `\n  sources:\n${l.sources.map((s) => `   - ${s.title} ${s.url}`).join("\n")}` : ""}`);
+      const caps = l.capabilities;
+      return text(
+        [
+          preview(l),
+          l.status === "suppressed" ? `  SUPPRESSED (hidden from discovery): ${l.suppressedReason}` : null,
+          `  seller: ${l.sellerName} (${l.sellerWallet})`,
+          `  sha256: ${l.sha256}`,
+          l.signals ? `  signals: ${Object.entries(l.signals).map(([k, v]) => `${k} ${Number(v).toFixed(2)}`).join(", ")}` : null,
+          caps ? `  output schema: text/markdown, ${caps.wordCount} words, ${caps.citationCount} citations; sections: ${caps.outline.join(" / ")}` : null,
+          caps?.answers.length ? `  answers:\n${caps.answers.map((a) => `   - ${a}`).join("\n")}` : null,
+          caps?.examples.length ? `  examples:\n${caps.examples.map((e) => `   - Q: ${e.input}\n     A: ${e.output}`).join("\n")}` : null,
+          l.attestation ? `  Vine review: ${l.attestation.score}/100, compliance ${l.attestation.compliance}. ${l.attestation.summary}${l.attestation.transaction ? ` (attested on-chain: ${l.attestation.transaction})` : ""}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
     } catch (e) {
       return fail(e);
     }
@@ -156,7 +183,13 @@ server.registerTool(
         return fail(`"${listing.title}" costs $${listing.priceUsd}, above your max of $${max_price_usd}.`);
       }
       const pay = await paidFetch();
-      const res = await pay(`${BASE}/api/listings/${encodeURIComponent(id)}/content`, { signal: AbortSignal.timeout(90_000) });
+      let res = await pay(`${BASE}/api/listings/${encodeURIComponent(id)}/content`, { signal: AbortSignal.timeout(90_000) });
+      // The market answers 5xx when its payment facilitator is briefly unreachable: nothing was charged, so retry.
+      for (let attempt = 1; res.status >= 500 && attempt <= 2; attempt++) {
+        log(`content returned ${res.status}, retrying (${attempt}/2)`);
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+        res = await pay(`${BASE}/api/listings/${encodeURIComponent(id)}/content`, { signal: AbortSignal.timeout(90_000) });
+      }
       if (res.status !== 200) return fail(`Purchase failed: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
       const { markdown } = (await res.json()) as { markdown: string };
       const header = res.headers.get("PAYMENT-RESPONSE");
@@ -176,7 +209,8 @@ server.registerTool(
         `Purchased "${listing.title}" for $${listing.priceUsd} devnet USDC.\n` +
           `Receipt: ${tx ? `https://explorer.solana.com/tx/${tx}?cluster=devnet` : "n/a"}\n` +
           `Integrity: sha256 matches the listing (${listing.sha256.slice(0, 16)}…)\n` +
-          `Session spend: $${Number(spentMicros) / 1e6} of $${Number(BUDGET_MICROS) / 1e6}\n\n---\n\n${markdown}`,
+          `Session spend: $${Number(spentMicros) / 1e6} of $${Number(BUDGET_MICROS) / 1e6}\n` +
+          `After using it, leave a Verified Rating: rate_knowledge(id: "${id}", transaction: "${tx}", rating: 1-5).\n\n---\n\n${markdown}`,
       );
     } catch (e) {
       return fail(e);
@@ -205,6 +239,29 @@ server.registerTool(
         body: JSON.stringify({ markdown, priceUsd: price_usd, sellerName: seller_name ?? "mcp-agent", sellerWallet: s.address }),
       });
       return text(`Listed "${listing.title}" (id ${listing.id}) at $${listing.priceUsd}. Payments go to ${listing.sellerWallet}.\nsha256: ${listing.sha256}\nView: ${BASE}/listing/${listing.id}`);
+    } catch (e) {
+      return fail(e);
+    }
+  },
+);
+
+server.registerTool(
+  "rate_knowledge",
+  {
+    title: "Leave a Verified Rating",
+    description: "Rate a knowledge file you bought (1-5). Only accepted with the transaction of your own paid purchase, so every rating is a Verified Rating. Ratings feed the ranking and the Buy Box.",
+    inputSchema: {
+      id: z.string().describe("Listing id"),
+      transaction: z.string().describe("The purchase transaction returned by buy_knowledge"),
+      rating: z.number().int().min(1).max(5),
+      comment: z.string().optional().describe("One sentence: how well it answered your need"),
+    },
+  },
+  async ({ id, transaction, rating, comment }) => {
+    try {
+      const rater = (await signer()).address;
+      await api(`/api/listings/${encodeURIComponent(id)}/ratings`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transaction, rating, comment, rater }) });
+      return text(`Verified Rating recorded: ${rating}★ for ${id}.`);
     } catch (e) {
       return fail(e);
     }

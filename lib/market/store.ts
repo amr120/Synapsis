@@ -12,6 +12,33 @@ export interface Source {
   url: string;
 }
 
+/** Rich structured metadata: what agents need to decide (the agent equivalent of product photos). */
+export interface Capabilities {
+  /** Questions this file can answer (its capability signature). */
+  answers: string[];
+  /** Example input → output pairs drawn from the file. */
+  examples: { input: string; output: string }[];
+  /** Section outline: the output schema of the file. */
+  outline: string[];
+  format: "text/markdown";
+  wordCount: number;
+  /** Inline citation markers like [1] plus linked sources. */
+  citationCount: number;
+}
+
+/** Vine review: a verifier agent assesses a new listing before organic ratings exist. */
+export interface Attestation {
+  verifier: string;
+  /** 0-100 quality score. */
+  score: number;
+  compliance: "pass" | "fail";
+  checks: { name: string; pass: boolean; note: string }[];
+  summary: string;
+  attestedAt: string;
+  /** Devnet memo transaction anchoring this attestation to the file's sha256, if it landed. */
+  transaction: string | null;
+}
+
 export interface Listing {
   id: string;
   title: string;
@@ -27,6 +54,21 @@ export interface Listing {
   sources: Source[];
   createdAt: string;
   sales: number;
+  capabilities?: Capabilities;
+  attestation?: Attestation;
+  /** Suppressed listings are hidden from discovery but still reachable by id (owner can see why). */
+  status?: "active" | "suppressed";
+  suppressedReason?: string;
+}
+
+/** Verified Rating: only a buyer with a recorded, paid purchase of this listing can rate it. */
+export interface Rating {
+  listingId: string;
+  transaction: string;
+  rating: number;
+  comment: string;
+  rater: string | null;
+  createdAt: string;
 }
 
 export interface Purchase {
@@ -142,24 +184,26 @@ export async function getContent(id: string): Promise<string | null> {
   return store().get(contentKey(id));
 }
 
-export async function listListings(limit = 100): Promise<Listing[]> {
+/** Listings in discovery. Suppressed ones are left out unless asked for (or owned by `seller`). */
+export async function listListings(limit = 100, opts: { includeSuppressed?: boolean; seller?: string } = {}): Promise<Listing[]> {
   const ids = await store().range(LISTINGS, limit);
-  const listings = await Promise.all(ids.map(getListing));
-  return listings.filter((l): l is Listing => l !== null);
+  const listings = (await Promise.all(ids.map(getListing))).filter((l): l is Listing => l !== null);
+  return listings.filter((l) => l.status !== "suppressed" || opts.includeSuppressed || (opts.seller && l.sellerWallet === opts.seller));
 }
 
-/** Keyword search over title, abstract, topic and tags. Returns the best matches first. */
-export async function searchListings(query: string, limit = 8): Promise<Listing[]> {
-  const all = await listListings();
+/** Keyword relevance (0 = no match) over title, abstract, tags and the capability signature. */
+export function relevance(l: Listing, query: string): number {
   const terms = query.toLowerCase().split(/\W+/).filter((t) => t.length > 2);
-  if (terms.length === 0) return all.slice(0, limit);
-  const score = (l: Listing) => {
-    const title = l.title.toLowerCase();
-    const body = `${l.abstract} ${l.topic} ${l.tags.join(" ")}`.toLowerCase();
-    return terms.reduce((s, t) => s + (title.includes(t) ? 3 : 0) + (body.includes(t) ? 1 : 0), 0);
-  };
-  return all
-    .map((l) => ({ l, s: score(l) }))
+  if (terms.length === 0) return 1;
+  const title = l.title.toLowerCase();
+  const body = `${l.abstract} ${l.topic} ${l.tags.join(" ")} ${(l.capabilities?.answers ?? []).join(" ")} ${(l.capabilities?.outline ?? []).join(" ")}`.toLowerCase();
+  return terms.reduce((s, t) => s + (title.includes(t) ? 3 : 0) + (body.includes(t) ? 1 : 0), 0);
+}
+
+/** Keyword search (discovery only). Ranking with trust signals lives in ranking.ts. */
+export async function searchListings(query: string, limit = 8): Promise<Listing[]> {
+  return (await listListings())
+    .map((l) => ({ l, s: relevance(l, query) }))
     .filter((x) => x.s > 0)
     .sort((a, b) => b.s - a.s)
     .slice(0, limit)
@@ -176,4 +220,20 @@ export async function recordPurchase(p: Omit<Purchase, "id" | "createdAt">): Pro
 
 export async function listPurchases(limit = 20): Promise<Purchase[]> {
   return (await store().range(PURCHASES, limit)).map((s) => JSON.parse(s) as Purchase);
+}
+
+export async function updateListing(listing: Listing): Promise<void> {
+  await store().set(listingKey(listing.id), JSON.stringify(listing));
+}
+
+const ratingsKey = (id: string) => `market:ratings:${id}`;
+
+export async function listRatings(listingId: string, limit = 100): Promise<Rating[]> {
+  return (await store().range(ratingsKey(listingId), limit)).map((s) => JSON.parse(s) as Rating);
+}
+
+export async function addRating(r: Omit<Rating, "createdAt">): Promise<Rating> {
+  const rating: Rating = { ...r, createdAt: new Date().toISOString() };
+  await store().push(ratingsKey(r.listingId), JSON.stringify(rating));
+  return rating;
 }

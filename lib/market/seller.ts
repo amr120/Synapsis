@@ -3,6 +3,7 @@ import { isAddress } from "@solana/kit";
 import { generateWithGemini } from "../ai/gemini";
 import { getPayToAddress } from "../payments/config";
 import { createListing, type Listing, type Source } from "./store";
+import { describeCapabilities, enrichAndReview } from "./vine";
 
 // The seller agent: researches a topic with Gemini (grounded in Google Search when available),
 // writes a sourced Markdown knowledge file, describes it, and lists it for sale.
@@ -49,8 +50,14 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
   });
   const meta = JSON.parse(response.text ?? "{}") as { title: string; abstract: string; topic: string; tags: string[] };
 
-  return createListing(
+  const capabilities = await describeCapabilities(markdown, input.sources?.length ?? 0).catch((err) => {
+    console.warn("[seller] capability extraction failed:", String(err).slice(0, 120));
+    return undefined;
+  });
+  const listing = await createListing(
     {
+      capabilities,
+      status: "active",
       title: meta.title,
       abstract: meta.abstract,
       topic: meta.topic,
@@ -62,6 +69,9 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
     },
     markdown,
   );
+  // Vine review runs in the background: the listing is live (marked "New") until it lands.
+  void enrichAndReview(listing.id).catch((err) => console.warn("[vine] review failed:", String(err).slice(0, 160)));
+  return listing;
 }
 
 /** Deep-researches a topic and returns the Markdown plus the web sources it was grounded in. */

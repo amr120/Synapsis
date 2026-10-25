@@ -182,3 +182,16 @@ textarea:focus, input:focus { border-color: var(--signal); box-shadow: inset 0 0
 .md ul, .md ol { margin: 0 0 10px; padding-left: 22px; }
 .md li { margin: 3px 0; }
 @media (max-width: 640px) { .receipts th:nth-child(3), .receipts td:nth-child(3) { display: none; } }
+
+/* ---------- Trust signals ---------- */
+.signals { display: flex; flex-direction: column; gap: 8px; }
+.signal { display: grid; grid-template-columns: minmax(150px, 1.3fr) 2fr auto; gap: 10px; align-items: center; font-size: 13px; }
+.signal .bar { height: 8px; background: var(--strip); border: 1px solid var(--hairline); border-radius: 2px; overflow: hidden; }
+.signal .bar span { display: block; height: 100%; background: var(--signal); }
+.mono { font-family: var(--mono); }
+.tight { margin: 6px 0 0; padding-left: 18px; }
+.tight li { margin: 2px 0; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.45; }
+.checks li { display: flex; gap: 10px; align-items: baseline; }
+.checks .tag { min-width: 44px; text-align: center; }
+@media (max-width: 640px) { .signal { grid-template-columns: 1fr; gap: 4px; } }
