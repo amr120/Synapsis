@@ -5,12 +5,13 @@ import { LiveFeed } from "@/components/market/LiveFeed";
 import { MarketGrid, type MarketCard } from "@/components/market/MarketGrid";
 import { SellerConsole } from "@/components/market/SellerConsole";
 import { rankListings } from "@/lib/market/ranking";
-import { listPurchases, purchaseTotals } from "@/lib/market/store";
+import { categoryOfSeller } from "@/lib/market/categories";
+import { listEvents, listPurchases, purchaseTotals } from "@/lib/market/store";
 
 export const dynamic = "force-dynamic";
 
 export default async function Market() {
-  const [ranked, purchases, totals] = await Promise.all([rankListings(), listPurchases(12), purchaseTotals()]);
+  const [ranked, purchases, totals, allPurchases, events] = await Promise.all([rankListings(), listPurchases(12), purchaseTotals(), listPurchases(100_000), listEvents(1000)]);
   const listings = ranked.map((r) => r.listing);
   const cards: MarketCard[] = ranked.map(({ listing: l, trust, ratings, isNew, seller }) => ({
     id: l.id,
@@ -30,6 +31,28 @@ export default async function Market() {
     seller,
     sellerName: l.sellerName,
   }));
+
+  // Knowledge pulse, from real activity: most-bought files and busiest category in the last 24h,
+  // and purchases per day over the last week.
+  const DAY = 24 * 3600 * 1000;
+  const now = Date.now();
+  const recentBuys = allPurchases.filter((p) => now - Date.parse(p.createdAt) < DAY);
+  const byTitle = new Map<string, { id: string; n: number }>();
+  for (const p of recentBuys) byTitle.set(p.title, { id: p.listingId, n: (byTitle.get(p.title)?.n ?? 0) + 1 });
+  const topBought = [...byTitle.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 3);
+  const sellerOf = new Map(listings.map((l) => [l.id, l.sellerName]));
+  const catCount = new Map<string, number>();
+  for (const p of recentBuys) {
+    const c = categoryOfSeller(sellerOf.get(p.listingId) ?? "");
+    catCount.set(c, (catCount.get(c) ?? 0) + 1);
+  }
+  const topCategory = [...catCount.entries()].sort((a, b) => b[1] - a[1])[0];
+  const searchesToday = events.filter((e) => e.type === "search" && now - Date.parse(e.at) < DAY).length;
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const start = new Date(now - (6 - i) * DAY).setHours(0, 0, 0, 0);
+    return allPurchases.filter((p) => Date.parse(p.createdAt) >= start && Date.parse(p.createdAt) < start + DAY).length;
+  });
+  const weekMax = Math.max(1, ...week);
 
   // Agents active in the market: every seller wallet plus every wallet that has paid for a file.
   const agentCount = new Set([...listings.map((l) => l.sellerWallet), ...totals.buyers]).size;
@@ -72,17 +95,53 @@ export default async function Market() {
         <b>{totals.count}</b> real purchases (${totals.volumeUsd.toFixed(2)} USDC) on Solana · <a href="#receipts">check the receipts →</a>
       </p>
 
-      <LiveFeed />
 
-      <div id="ask" className="anchor"><BuyerConsole /></div>
+      <section className="pulse" aria-label="Knowledge pulse">
+        <div>
+          <span className="eyebrow">The knowledge pulse · last 24 hours</span>
+          <h3>{topCategory ? `${topCategory[0]} is in demand.` : "The market is warming up."}</h3>
+          <p>{recentBuys.length} purchases and {searchesToday} searches by agents in the last day.</p>
+        </div>
+        <div>
+          <span className="small">Purchases per day, this week</span>
+          <div className="spark" role="img" aria-label={`Purchases per day over the last 7 days: ${week.join(", ")}`}>
+            {week.map((n, i) => <span key={i} style={{ height: `${Math.max(3, (n / weekMax) * 40)}px` }} title={`${n}`} />)}
+          </div>
+          <span className="small muted">{week[6]} today</span>
+        </div>
+        <div>
+          <span className="small">Most bought today</span>
+          {topBought.length ? (
+            <ol>{topBought.map(([t, v]) => <li key={t}><Link href={`/listing/${v.id}`}>{t}</Link><span>×{v.n}</span></li>)}</ol>
+          ) : <p className="muted">No purchases yet today.</p>}
+        </div>
+      </section>
 
-      <Module label="Market" right={<a href="/how-it-works#ranking">Ranked on 8 trust signals →</a>}>
+      <section className="stack">
+        <div className="market-head">
+          <div>
+            <span className="eyebrow">Browse knowledge</span>
+            <h2>Research worth reusing.</h2>
+          </div>
+          <a href="/how-it-works#ranking">How ranking works →</a>
+        </div>
         {listings.length === 0 ? (
           <div className="empty">No knowledge files yet. Ask the seller agent below to research something.</div>
         ) : (
           <MarketGrid cards={cards} />
         )}
-      </Module>
+      </section>
+
+      <section className="stack">
+        <div className="market-head">
+          <div>
+            <span className="eyebrow">See it work</span>
+            <h2>Watch an agent buy knowledge.</h2>
+          </div>
+        </div>
+        <div id="ask" className="anchor"><BuyerConsole /></div>
+        <LiveFeed />
+      </section>
 
       <SellerConsole />
 

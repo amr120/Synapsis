@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Led } from "@/components/ui";
 import type { SellerTier } from "@/lib/market/sellers";
-import { SellerBadge } from "./SellerBadge";
+import { categoryOfSeller } from "@/lib/market/categories";
+import { PackCover } from "./PackCover";
 
 export interface MarketCard {
   id: string;
@@ -25,15 +25,7 @@ export interface MarketCard {
   sellerName: string;
 }
 
-// Seller agents are specialists, so their name gives each file a browsable category.
-const CATEGORY: Record<string, string> = {
-  "atlas-bio-research": "Life sciences",
-  "meridian-policy-desk": "Policy & law",
-  "ledger-labs": "AI & crypto",
-  "helios-energy-analyst": "Energy & climate",
-  "synapsis-research-agent": "Engineering",
-};
-const categoryOf = (c: MarketCard) => CATEGORY[c.sellerName] ?? "Other";
+const categoryOf = (c: MarketCard) => categoryOfSeller(c.sellerName);
 
 const SORTS = {
   trust: { label: "Most trusted", fn: (a: MarketCard, b: MarketCard) => b.trust - a.trust },
@@ -78,7 +70,7 @@ export function MarketGrid({ cards }: { cards: MarketCard[] }) {
       <div className="market-tools">
         <input
           type="search"
-          placeholder={`Search ${cards.length} knowledge files…`}
+          placeholder={`What would you like to understand? (${cards.length} knowledge packs)`}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -117,25 +109,38 @@ export function MarketGrid({ cards }: { cards: MarketCard[] }) {
       {results.length === 0 ? (
         <div className="empty">No files match. Try fewer words, or ask the buyer agent above.</div>
       ) : (
-        <div className="keys">
+        <div className="packs">
           {results.slice(0, shown).map((l) => (
-            <Link key={l.id} href={`/listing/${l.id}`} className="key listing">
-              <Led tone={l.vine?.compliance === "pass" ? "ok" : "signal"} />
-              <b>{l.title}</b>
-              <div className="row">
-                <span className="tag tag--signal" title="Trust score (0-100): the market's overall verdict, combining the quality check, buyer reviews, sales, the seller's record, sourcing and price. Decides the ranking.">Trust {Math.round(l.trust * 100)}</span>
-                {l.ratings.count > 0 ? <span className="tag tag--ok" title="Reviews from paying buyers only (Verified Ratings)">★ {l.ratings.average} · {l.ratings.count} {l.ratings.count === 1 ? "buyer" : "buyers"}</span> : null}
-                {l.vine ? <span className="tag tag--ok" title={`Independent quality check (Vine): ${l.vine.score}/100, safety ${l.vine.compliance}.`}>{l.vine.compliance === "pass" ? "✓ Checked" : "✗ Failed check"}</span> : null}
-                {l.isNew ? <span className="tag tag--warn">New</span> : null}
+            <Link key={l.id} href={`/listing/${l.id}`} className="pack">
+              <span className="pack-cover"><PackCover seed={l.sha256} category={categoryOf(l)} /></span>
+              <div className="pack-main">
+                <div className="pack-top">
+                  <span>{categoryOf(l)}</span>
+                  {l.sales >= 3 ? <span className="pack-hot">Popular ↗</span> : l.isNew ? <span className="pack-hot">New</span> : null}
+                </div>
+                <h3 className="pack-title">{l.title}</h3>
+                <p className="pack-summary">{l.abstract}</p>
+                <p className="pack-byline">
+                  By <strong>{l.seller?.name ?? l.sellerName}</strong>
+                  {l.seller ? ` · ${l.seller.tier} · reliability ${l.seller.reliability}/100` : ""}
+                  {l.vine ? (l.vine.compliance === "pass" ? " · ✓ checked" : " · ✗ failed check") : ""}
+                </p>
+                <div className="pack-metrics">
+                  <div title="Trust score: the market's overall verdict, combining the quality check, buyer reviews, sales, the seller's record, sourcing and price.">
+                    <strong>{Math.round(l.trust * 100)} <small>/ 100</small></strong>
+                    <span>Trust score</span>
+                  </div>
+                  <div>
+                    <strong>{l.sales}</strong>
+                    <span>Copies purchased</span>
+                  </div>
+                </div>
+                <div className="pack-price">
+                  <b>{l.priceUsd.toFixed(2)} <small>USDC / pack</small></b>
+                  <span>{l.ratings.count ? `★ ${l.ratings.average} (${l.ratings.count})` : "No reviews yet"}</span>
+                </div>
               </div>
-              <p>{l.abstract}</p>
-              {l.seller && <span className="small muted">by <strong>{l.seller.name}</strong> · <SellerBadge tier={l.seller.tier} reliability={l.seller.reliability} /></span>}
-              <div className="listing-foot">
-                <span>${l.priceUsd} USDC</span>
-                <span>{(l.bytes / 1024).toFixed(1)} KB</span>
-                <span>{l.sales} sold</span>
-                <span title={l.sha256}>#{l.sha256.slice(0, 8)}</span>
-              </div>
+              <span className="pack-read"><span>Preview knowledge</span><span aria-hidden="true">→</span></span>
             </Link>
           ))}
         </div>
