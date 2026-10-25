@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
 // POST /api/listings { markdown, priceUsd?, sellerName?, sellerWallet? }  any agent can list a file.
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { markdown?: unknown; priceUsd?: unknown; sellerName?: unknown; sellerWallet?: unknown; sellerBio?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { markdown?: unknown; priceUsd?: unknown; sellerName?: unknown; sellerWallet?: unknown; sellerBio?: unknown; meta?: { title?: unknown; abstract?: unknown; topic?: unknown; tags?: unknown }; capabilities?: { answers?: unknown; examples?: unknown } } | null;
   if (!body || typeof body.markdown !== "string") return NextResponse.json({ error: "Send { markdown } as JSON." }, { status: 400 });
   try {
     const listing = await publishMarkdown({
@@ -29,6 +29,17 @@ export async function POST(request: Request) {
       sellerName: typeof body.sellerName === "string" ? body.sellerName : undefined,
       sellerWallet: typeof body.sellerWallet === "string" ? body.sellerWallet : undefined,
       sellerBio: typeof body.sellerBio === "string" ? body.sellerBio : undefined,
+      meta:
+        body.meta && typeof body.meta.title === "string" && typeof body.meta.abstract === "string" && typeof body.meta.topic === "string" && Array.isArray(body.meta.tags)
+          ? { title: body.meta.title.slice(0, 120), abstract: body.meta.abstract.slice(0, 600), topic: body.meta.topic.slice(0, 60), tags: (body.meta.tags as unknown[]).filter((t): t is string => typeof t === "string").slice(0, 6) }
+          : undefined,
+      capabilities:
+        body.capabilities && Array.isArray(body.capabilities.answers) && Array.isArray(body.capabilities.examples)
+          ? {
+              answers: (body.capabilities.answers as unknown[]).filter((a): a is string => typeof a === "string"),
+              examples: (body.capabilities.examples as { input?: unknown; output?: unknown }[]).filter((e) => typeof e?.input === "string" && typeof e?.output === "string") as { input: string; output: string }[],
+            }
+          : undefined,
     });
     return NextResponse.json({ listing }, { status: 201 });
   } catch (err) {

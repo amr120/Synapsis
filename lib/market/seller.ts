@@ -6,7 +6,7 @@ import { generateWithGemini } from "../ai/gemini";
 const sellerModel = () => ({ prefer: process.env.MARKET_SELLER_MODEL?.trim() || undefined });
 import { getPayToAddress } from "../payments/config";
 import { createListing, getSellerProfile, logEvent, saveSellerProfile, type Listing, type Source } from "./store";
-import { describeCapabilities, enrichAndReview } from "./vine";
+import { describeCapabilities, enrichAndReview, structureOf } from "./vine";
 
 // The seller agent: researches a topic with Gemini (grounded in Google Search when available),
 // writes a sourced Markdown knowledge file, describes it, and lists it for sale.
@@ -35,6 +35,10 @@ export interface PublishInput {
   sellerWallet?: string;
   sellerBio?: string;
   sources?: Source[];
+  /** Metadata the seller already wrote; when given, Synapsis doesn't ask Gemini to describe the file. */
+  meta?: { title: string; abstract: string; topic: string; tags: string[] };
+  /** Capability signature the seller already wrote (answers + example I/O); outline and counts are still computed. */
+  capabilities?: { answers: string[]; examples: { input: string; output: string }[] };
 }
 
 export const defaultPriceUsd = () => Number(process.env.MARKET_DEFAULT_PRICE_USD || "0.02");
@@ -48,16 +52,23 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
   const sellerWallet = input.sellerWallet?.trim() || getPayToAddress();
   if (!isAddress(sellerWallet)) throw new Error("sellerWallet is not a Solana address.");
 
-  const response = await generateWithGemini({
-    contents: `Describe this knowledge file for a marketplace listing.\n\n${markdown.slice(0, 12_000)}`,
-    config: { responseMimeType: "application/json", responseJsonSchema: DESCRIBE_SCHEMA },
-  }, sellerModel());
-  const meta = JSON.parse(response.text ?? "{}") as { title: string; abstract: string; topic: string; tags: string[] };
+  const meta =
+    input.meta ??
+    (JSON.parse(
+      (
+        await generateWithGemini({
+          contents: `Describe this knowledge file for a marketplace listing.\n\n${markdown.slice(0, 12_000)}`,
+          config: { responseMimeType: "application/json", responseJsonSchema: DESCRIBE_SCHEMA },
+        }, sellerModel())
+      ).text ?? "{}",
+    ) as { title: string; abstract: string; topic: string; tags: string[] });
 
-  const capabilities = await describeCapabilities(markdown, input.sources?.length ?? 0).catch((err) => {
-    console.warn("[seller] capability extraction failed:", String(err).slice(0, 120));
-    return undefined;
-  });
+  const capabilities = input.capabilities
+    ? { answers: input.capabilities.answers.slice(0, 6), examples: input.capabilities.examples.slice(0, 3), ...structureOf(markdown, input.sources?.length ?? 0) }
+    : await describeCapabilities(markdown, input.sources?.length ?? 0).catch((err) => {
+        console.warn("[seller] capability extraction failed:", String(err).slice(0, 120));
+        return undefined;
+      });
   const listing = await createListing(
     {
       capabilities,

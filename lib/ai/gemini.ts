@@ -6,7 +6,7 @@ import { GoogleGenAI, type GenerateContentParameters, type GenerateContentRespon
 
 // Tried in order. GEMINI_MODEL (if set) goes first. The newest flash models are often overloaded,
 // so the defaults are the ones that answer reliably on the free tier, with lighter fallbacks.
-const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"];
 // Per-call limit, so one overloaded model can't hang a race attempt.
 const CALL_TIMEOUT_MS = 20_000;
 
