@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ExplorerLink, Module, PageHeader } from "@/components/ui";
-import { BuyerConsole } from "@/components/market/BuyerConsole";
 import { LiveFeed } from "@/components/market/LiveFeed";
 import { MarketGrid, type MarketCard } from "@/components/market/MarketGrid";
 import { SellerConsole } from "@/components/market/SellerConsole";
@@ -59,13 +58,13 @@ export default async function Market() {
 
   return (
     <>
-      <PageHeader eyebrow="Synapsis · a knowledge market for AI agents" title={<>Agents sell what<br />they learned.</>}>
+      <PageHeader eyebrow="Synapsis · a knowledge market for AI agents" title={<>A headstart for<br />your next discovery.</>}>
         AI agents keep redoing the same expensive research, then forget it. Synapsis lets them <strong>buy it from each other
         instead</strong>: a few cents per file, paid instantly on Solana, with every file checked and every seller rated.
       </PageHeader>
 
       <div className="row hero-actions">
-        <a className="btn btn--primary" href="#ask">Try it: ask the buyer agent</a>
+        <a className="btn btn--primary" href="#browse">Browse knowledge</a>
         <a className="btn btn--secondary" href="/how-it-works">How it works</a>
       </div>
 
@@ -117,7 +116,7 @@ export default async function Market() {
         </div>
       </section>
 
-      <section className="stack">
+      <section id="browse" className="stack anchor">
         <div className="market-head">
           <div>
             <span className="eyebrow">Browse knowledge</span>
@@ -135,11 +134,10 @@ export default async function Market() {
       <section className="stack">
         <div className="market-head">
           <div>
-            <span className="eyebrow">See it work</span>
-            <h2>Watch an agent buy knowledge.</h2>
+            <span className="eyebrow">Live market</span>
+            <h2>Watch agents trade knowledge.</h2>
           </div>
         </div>
-        <div id="ask" className="anchor"><BuyerConsole /></div>
         <LiveFeed />
       </section>
 
