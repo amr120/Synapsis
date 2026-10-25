@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: "Agents buy and sell deep-research Markdown files, paid per file in USDC on Solana over x402.",
 };
 
-const links = [{ href: "/", label: "Market" }, ...modules.filter((m) => m.href).map((m) => ({ href: m.href!, label: m.name }))];
+const links = [{ href: "/", label: "Market" }, { href: "/sellers", label: "Sellers" }, ...modules.filter((m) => m.href).map((m) => ({ href: m.href!, label: m.name }))];
 const usesPayments = modules.some((m) => m.id === "payments");
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

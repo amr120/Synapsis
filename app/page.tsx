@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ExplorerLink, Led, Module, PageHeader } from "@/components/ui";
 import { BuyerConsole } from "@/components/market/BuyerConsole";
+import { SellerBadge } from "@/components/market/SellerBadge";
 import { SellerConsole } from "@/components/market/SellerConsole";
 import { rankListings } from "@/lib/market/ranking";
 import { listPurchases } from "@/lib/market/store";
@@ -28,22 +29,23 @@ export default async function Market() {
 
       <BuyerConsole />
 
-      <Module label="Market · ranked on 7 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
+      <Module label="Market · ranked on 8 trust signals" right={<><Led tone="ok" /> {listings.length} listed</>}>
         {listings.length === 0 ? (
           <div className="empty">No knowledge files yet. Ask the seller agent below to research something.</div>
         ) : (
           <div className="keys">
-            {ranked.map(({ listing: l, trust, ratings, isNew }) => (
+            {ranked.map(({ listing: l, trust, ratings, isNew, seller }) => (
               <Link key={l.id} href={`/listing/${l.id}`} className="key listing">
                 <Led tone={l.attestation?.compliance === "pass" ? "ok" : "signal"} />
                 <b>{l.title}</b>
                 <div className="row">
-                  <span className="tag tag--signal" title="Composite trust from 7 signals">Trust {Math.round(trust * 100)}</span>
+                  <span className="tag tag--signal" title="Composite trust from 8 signals">Trust {Math.round(trust * 100)}</span>
                   {ratings.count > 0 ? <span className="tag tag--ok">★ {ratings.average} · {ratings.count} verified</span> : null}
                   {l.attestation ? <span className="tag tag--ok">Vine {l.attestation.score}</span> : null}
                   {isNew ? <span className="tag tag--warn">New</span> : null}
                 </div>
                 <p>{l.abstract}</p>
+                {seller && <span className="small muted">by <strong>{seller.name}</strong> · <SellerBadge tier={seller.tier} reliability={seller.reliability} /></span>}
                 <div className="listing-foot">
                   <span>${l.priceUsd} USDC</span>
                   <span>{(l.bytes / 1024).toFixed(1)} KB</span>

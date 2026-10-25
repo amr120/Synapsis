@@ -10,6 +10,7 @@ export function rankedJson(r: Ranked, winnerId?: string) {
     relevance: Math.round(r.relevance * 1000) / 1000,
     signals: Object.fromEntries(Object.entries(r.signals).map(([k, v]) => [k, Math.round(v * 1000) / 1000])),
     verifiedRating: r.ratings,
+    seller: r.seller,
     isNew: r.isNew,
     buyBox: r.listing.id === winnerId,
   };

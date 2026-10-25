@@ -226,6 +226,26 @@ export async function updateListing(listing: Listing): Promise<void> {
   await store().set(listingKey(listing.id), JSON.stringify(listing));
 }
 
+/** A seller agent's public profile, keyed by the wallet it is paid to. */
+export interface SellerProfile {
+  wallet: string;
+  name: string;
+  bio: string;
+  specialties: string[];
+  createdAt: string;
+}
+
+const sellerKey = (wallet: string) => `market:seller:${wallet}`;
+
+export async function getSellerProfile(wallet: string): Promise<SellerProfile | null> {
+  const raw = await store().get(sellerKey(wallet));
+  return raw ? (JSON.parse(raw) as SellerProfile) : null;
+}
+
+export async function saveSellerProfile(p: SellerProfile): Promise<void> {
+  await store().set(sellerKey(p.wallet), JSON.stringify(p));
+}
+
 const ratingsKey = (id: string) => `market:ratings:${id}`;
 
 export async function listRatings(listingId: string, limit = 100): Promise<Rating[]> {

@@ -2,7 +2,7 @@ import "server-only";
 import { isAddress } from "@solana/kit";
 import { generateWithGemini } from "../ai/gemini";
 import { getPayToAddress } from "../payments/config";
-import { createListing, type Listing, type Source } from "./store";
+import { createListing, getSellerProfile, saveSellerProfile, type Listing, type Source } from "./store";
 import { describeCapabilities, enrichAndReview } from "./vine";
 
 // The seller agent: researches a topic with Gemini (grounded in Google Search when available),
@@ -30,6 +30,7 @@ export interface PublishInput {
   priceUsd?: number;
   sellerName?: string;
   sellerWallet?: string;
+  sellerBio?: string;
   sources?: Source[];
 }
 
@@ -69,6 +70,10 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
     },
     markdown,
   );
+  // First listing from this wallet creates the seller agent's public profile.
+  if (!(await getSellerProfile(sellerWallet))) {
+    await saveSellerProfile({ wallet: sellerWallet, name: listing.sellerName, bio: input.sellerBio?.trim().slice(0, 300) ?? "", specialties: [meta.topic], createdAt: listing.createdAt });
+  }
   // Vine review runs in the background: the listing is live (marked "New") until it lands.
   void enrichAndReview(listing.id).catch((err) => console.warn("[vine] review failed:", String(err).slice(0, 160)));
   return listing;

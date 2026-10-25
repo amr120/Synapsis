@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ExplorerLink, Led, Module, PageHeader } from "@/components/ui";
 import { BuyListing } from "@/components/market/BuyListing";
 import { signalsFor, summarize, trustOf, WEIGHTS, type SignalName } from "@/lib/market/ranking";
+import { getSeller } from "@/lib/market/sellers";
 import { getListing, listPurchases, listRatings } from "@/lib/market/store";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 const SIGNAL_LABELS: Record<SignalName, string> = {
   satisfaction: "Satisfaction (Verified Ratings)",
   attestation: "Vine attestation",
+  seller: "Seller reliability",
   sourceDensity: "Source density",
   compliance: "Compliance",
   earnings: "Earnings",
@@ -20,8 +22,8 @@ const SIGNAL_LABELS: Record<SignalName, string> = {
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const listing = await getListing((await params).id);
   if (!listing) notFound();
-  const [ratings, purchases] = await Promise.all([listRatings(listing.id), listPurchases(500)]);
-  const signals = signalsFor(listing, ratings, purchases);
+  const [ratings, purchases, seller] = await Promise.all([listRatings(listing.id), listPurchases(500), getSeller(listing.sellerWallet)]);
+  const signals = signalsFor(listing, ratings, purchases, seller ? seller.stats.reliability / 100 : 0.5);
   const trust = trustOf(signals);
   const summary = summarize(ratings);
   const caps = listing.capabilities;
@@ -123,7 +125,7 @@ export default async function ListingPage({ params }: { params: Promise<{ id: st
           <dl className="kv">
             <dt>Size</dt><dd>{listing.bytes.toLocaleString()} bytes of Markdown</dd>
             <dt>sha256</dt><dd>{listing.sha256}</dd>
-            <dt>Seller</dt><dd>{listing.sellerName}</dd>
+            <dt>Seller</dt><dd><Link href={`/seller/${listing.sellerWallet}`}>{seller?.stats.name ?? listing.sellerName}</Link>{seller ? ` · ${seller.stats.tier} · reliability ${seller.stats.reliability}/100` : ""}</dd>
             <dt>Paid to</dt><dd><a href={`https://explorer.solana.com/address/${listing.sellerWallet}?cluster=devnet`} target="_blank" rel="noopener noreferrer">{listing.sellerWallet}</a></dd>
             <dt>Listed</dt><dd>{new Date(listing.createdAt).toUTCString()}</dd>
             <dt>Tags</dt><dd>{listing.tags.join(", ")}</dd>

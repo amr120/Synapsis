@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
 // POST /api/listings { markdown, priceUsd?, sellerName?, sellerWallet? }  any agent can list a file.
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as { markdown?: unknown; priceUsd?: unknown; sellerName?: unknown; sellerWallet?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { markdown?: unknown; priceUsd?: unknown; sellerName?: unknown; sellerWallet?: unknown; sellerBio?: unknown } | null;
   if (!body || typeof body.markdown !== "string") return NextResponse.json({ error: "Send { markdown } as JSON." }, { status: 400 });
   try {
     const listing = await publishMarkdown({
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       priceUsd: typeof body.priceUsd === "number" ? body.priceUsd : undefined,
       sellerName: typeof body.sellerName === "string" ? body.sellerName : undefined,
       sellerWallet: typeof body.sellerWallet === "string" ? body.sellerWallet : undefined,
+      sellerBio: typeof body.sellerBio === "string" ? body.sellerBio : undefined,
     });
     return NextResponse.json({ listing }, { status: 201 });
   } catch (err) {

@@ -52,6 +52,7 @@ interface Listing {
   verifiedRating?: { count: number; average: number | null };
   isNew?: boolean;
   buyBox?: boolean;
+  seller?: { name: string; reliability: number; tier: string } | null;
   status?: string;
   suppressedReason?: string;
   capabilities?: { answers: string[]; examples: { input: string; output: string }[]; outline: string[]; wordCount: number; citationCount: number };
@@ -100,7 +101,7 @@ const fail = (e: unknown) => ({ ...text(`Error: ${e instanceof Error ? e.message
 const stars = (l: Listing) => (l.verifiedRating?.count ? `${l.verifiedRating.average}★ (${l.verifiedRating.count} Verified Ratings)` : "no Verified Ratings yet");
 const vine = (l: Listing) => (l.attestation ? `Vine ${l.attestation.score}/100, compliance ${l.attestation.compliance}` : "awaiting Vine review (new)");
 const preview = (l: Listing) =>
-  `- id: ${l.id}${l.buyBox ? "  ← BUY BOX (default pick)" : ""}\n  title: ${l.title}\n  price: $${l.priceUsd} USDC · ${l.trust !== undefined ? `trust ${l.trust} · ` : ""}${stars(l)} · ${vine(l)} · ${l.sales} sold\n  answers: ${(l.capabilities?.answers ?? []).slice(0, 3).join(" | ") || "n/a"}\n  abstract: ${l.abstract}`;
+  `- id: ${l.id}${l.buyBox ? "  ← BUY BOX (default pick)" : ""}\n  title: ${l.title}\n  price: $${l.priceUsd} USDC · ${l.trust !== undefined ? `trust ${l.trust} · ` : ""}${stars(l)} · ${vine(l)} · ${l.sales} sold${l.seller ? `\n  seller: ${l.seller.name} (${l.seller.tier}, reliability ${l.seller.reliability}/100, wallet ${l.sellerWallet})` : ""}\n  answers: ${(l.capabilities?.answers ?? []).slice(0, 3).join(" | ") || "n/a"}\n  abstract: ${l.abstract}`;
 
 // ---------- server ----------
 const server = new McpServer(
@@ -126,7 +127,7 @@ server.registerTool(
       const { listings, buyBox } = await api<{ listings: Listing[]; buyBox: { id: string; title: string; reason: string } | null }>(`/api/listings?q=${encodeURIComponent(query)}`);
       if (listings.length === 0) return text(`No knowledge files match "${query}". Consider researching it yourself and selling the result with sell_knowledge.`);
       const head = buyBox ? `Buy Box: "${buyBox.title}" (id ${buyBox.id}). ${buyBox.reason} Buy it unless another listing clearly fits better.` : "No Buy Box for this query (no strongly relevant, compliant file): judge the previews.";
-      return text(`${head}\n\n${listings.length} knowledge file(s), ranked on 7 trust signals:\n\n${listings.slice(0, 8).map(preview).join("\n\n")}\n\nUse get_listing for full metadata, buy_knowledge to purchase.`);
+      return text(`${head}\n\n${listings.length} knowledge file(s), ranked on 8 trust signals:\n\n${listings.slice(0, 8).map(preview).join("\n\n")}\n\nUse get_listing for full metadata, buy_knowledge to purchase.`);
     } catch (e) {
       return fail(e);
     }
@@ -148,7 +149,7 @@ server.registerTool(
         [
           preview(l),
           l.status === "suppressed" ? `  SUPPRESSED (hidden from discovery): ${l.suppressedReason}` : null,
-          `  seller: ${l.sellerName} (${l.sellerWallet})`,
+          `  seller: ${l.seller ? `${l.seller.name} (${l.seller.tier}, reliability ${l.seller.reliability}/100)` : l.sellerName} · wallet ${l.sellerWallet} (get_seller for the full record)`,
           `  sha256: ${l.sha256}`,
           l.signals ? `  signals: ${Object.entries(l.signals).map(([k, v]) => `${k} ${Number(v).toFixed(2)}`).join(", ")}` : null,
           caps ? `  output schema: text/markdown, ${caps.wordCount} words, ${caps.citationCount} citations; sections: ${caps.outline.join(" / ")}` : null,
@@ -262,6 +263,40 @@ server.registerTool(
       const rater = (await signer()).address;
       await api(`/api/listings/${encodeURIComponent(id)}/ratings`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ transaction, rating, comment, rater }) });
       return text(`Verified Rating recorded: ${rating}★ for ${id}.`);
+    } catch (e) {
+      return fail(e);
+    }
+  },
+);
+
+server.registerTool(
+  "get_seller",
+  {
+    title: "Check a seller agent",
+    description: "A seller agent's profile and reliability (0-100) across all its files: Verified Ratings, compliance record (suppressions), Vine quality, delivery integrity and sales. Use it before buying from an unfamiliar seller.",
+    inputSchema: { wallet: z.string().describe("The seller's wallet (sellerWallet on a listing)") },
+  },
+  async ({ wallet }) => {
+    try {
+      const s = await api<{
+        name: string; bio: string; tier: string; reliability: number; specialties: string[]; since: string;
+        activeListings: number; suppressedListings: number; sales: number; earningsUsd: number;
+        ratings: { count: number; average: number | null }; vineAverage: number | null; integrityRate: number | null;
+        components: Record<string, number>; listings: { id: string; title: string; status: string; suppressedReason: string | null }[];
+      }>(`/api/sellers/${encodeURIComponent(wallet)}`);
+      return text(
+        [
+          `${s.name}: ${s.tier}, reliability ${s.reliability}/100`,
+          s.bio ? `bio: ${s.bio}` : null,
+          `specialties: ${s.specialties.join(", ")}; selling since ${s.since}`,
+          `files: ${s.activeListings} active, ${s.suppressedListings} suppressed; sales: ${s.sales} ($${s.earningsUsd})`,
+          `Verified Ratings: ${s.ratings.count ? `${s.ratings.average}★ over ${s.ratings.count}` : "none yet"}; Vine average: ${s.vineAverage ?? "n/a"}; delivery integrity: ${s.integrityRate === null ? "no deliveries yet" : `${Math.round(s.integrityRate * 100)}%`}`,
+          `breakdown: ${Object.entries(s.components).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(", ")}`,
+          ...s.listings.filter((l) => l.status === "suppressed").map((l) => `suppressed file "${l.title}": ${l.suppressedReason}`),
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
     } catch (e) {
       return fail(e);
     }
