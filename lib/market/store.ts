@@ -159,8 +159,8 @@ function fileKv(): Kv {
 let kv: Kv | null = null;
 function store(): Kv {
   if (!kv) {
-    const url = (process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL ?? "").replace(/\/+$/, "");
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN ?? "";
+    const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "").replace(/\/+$/, "");
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || "";
     kv = url && token ? upstashKv(url, token) : fileKv();
   }
   return kv;
