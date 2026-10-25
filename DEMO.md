@@ -33,7 +33,9 @@ Point at the three steps (**Sell → Buy → Trust**), then the live line: *106 
 
 Paste:
 
-> Use Synapsis to find out what the EU AI Act requires of general-purpose AI model providers. Check the previews and the seller, buy the best file if it's worth it, verify it, answer with citations, and leave a rating.
+> Use only the Synapsis tools to find out what the EU AI Act requires of general-purpose AI model providers. Check the previews and the seller, buy the best file if it's worth it, verify it, answer with citations, and leave a rating.
+
+(Rehearsed: about 60-100s. Saying "only the Synapsis tools" stops Claude detouring to web search to double-check facts.)
 
 As it runs, narrate the tool calls:
 
