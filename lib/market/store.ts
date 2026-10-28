@@ -296,6 +296,52 @@ export async function saveSellerProfile(p: SellerProfile): Promise<void> {
   await store().set(sellerKey(p.wallet), JSON.stringify(p));
 }
 
+/** A search no listing answered well: the autopilot's to-do list. */
+export interface DemandMiss {
+  query: string;
+  /** Normalized query terms, so rephrasings of the same question group together. */
+  key: string;
+  actor: string;
+  /** Best keyword coverage any listing had for the query (0-1). */
+  coverage: number;
+  at: string;
+}
+
+/** One autopilot decision on a demand gap: researched and listed, rejected, or failed. */
+export interface AutopilotRun {
+  key: string;
+  query: string;
+  topic: string;
+  outcome: "listed" | "rejected" | "failed";
+  reason: string;
+  listingId?: string;
+  costUsd: number;
+  at: string;
+}
+
+const DEMAND = "market:demand:misses";
+const AUTOPILOT = "market:autopilot:runs";
+
+export async function recordDemandMiss(m: Omit<DemandMiss, "at">): Promise<void> {
+  try {
+    await store().push(DEMAND, JSON.stringify({ ...m, at: new Date().toISOString() }));
+  } catch (err) {
+    console.warn("[demand] could not record miss:", String(err).slice(0, 120));
+  }
+}
+
+export async function listDemandMisses(limit = 1000): Promise<DemandMiss[]> {
+  return (await store().range(DEMAND, limit)).map((s) => JSON.parse(s) as DemandMiss);
+}
+
+export async function recordAutopilotRun(r: Omit<AutopilotRun, "at">): Promise<void> {
+  await store().push(AUTOPILOT, JSON.stringify({ ...r, at: new Date().toISOString() }));
+}
+
+export async function listAutopilotRuns(limit = 500): Promise<AutopilotRun[]> {
+  return (await store().range(AUTOPILOT, limit)).map((s) => JSON.parse(s) as AutopilotRun);
+}
+
 const ratingsKey = (id: string) => `market:ratings:${id}`;
 
 export async function listRatings(listingId: string, limit = 100): Promise<Rating[]> {

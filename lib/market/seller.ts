@@ -39,6 +39,8 @@ export interface PublishInput {
   meta?: { title: string; abstract: string; topic: string; tags: string[] };
   /** Capability signature the seller already wrote (answers + example I/O); outline and counts are still computed. */
   capabilities?: { answers: string[]; examples: { input: string; output: string }[] };
+  /** Wait for the Vine review instead of running it in the background (serverless jobs end when they return). */
+  awaitReview?: boolean;
 }
 
 export const defaultPriceUsd = () => Number(process.env.MARKET_DEFAULT_PRICE_USD || "0.02");
@@ -90,8 +92,11 @@ export async function publishMarkdown(input: PublishInput): Promise<Listing> {
     await saveSellerProfile({ wallet: sellerWallet, name: listing.sellerName, bio: input.sellerBio?.trim().slice(0, 300) ?? "", specialties: [meta.topic], createdAt: listing.createdAt });
   }
   // Vine review runs in the background: the listing is live (marked "New") until it lands.
-  void enrichAndReview(listing.id).catch((err) => console.warn("[vine] review failed:", String(err).slice(0, 160)));
-  return listing;
+  const review = enrichAndReview(listing.id).catch((err) => {
+    console.warn("[vine] review failed:", String(err).slice(0, 160));
+    return listing;
+  });
+  return input.awaitReview ? review : listing;
 }
 
 /** Deep-researches a topic and returns the Markdown plus the web sources it was grounded in. */

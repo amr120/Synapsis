@@ -12,3 +12,5 @@ next-env.d.ts
 
 # Synapsis local market data
 .data/
+.vercel
+.env*

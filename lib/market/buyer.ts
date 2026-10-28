@@ -4,6 +4,7 @@ import { buy } from "../paidapi/buyer";
 import { getSpendingTracker } from "../paidapi/buyer";
 import { buyBox, rankListings, rateListing, WEIGHTS } from "./ranking";
 import { loadAgentSigner } from "../payments/client";
+import { recordSearch } from "./demand";
 import { logEvent, recordPurchase, sha256, type Listing } from "./store";
 
 // The buyer agent: given a question, it searches Synapsis, judges the free abstracts, buys the
@@ -70,6 +71,7 @@ export async function runBuyer(question: string): Promise<BuyerRun> {
   const candidates = ranked.slice(0, 6);
   const me = await loadAgentSigner().then((s) => s.address).catch(() => "buyer-agent");
   await logEvent({ type: "search", actor: me, subject: question.slice(0, 80), detail: `${ranked.length} hit${ranked.length === 1 ? "" : "s"}` });
+  await recordSearch(question, me, ranked.map((r) => r.listing));
   run.candidates = candidates.map(({ listing: { id, title, priceUsd } }) => ({ id, title, priceUsd }));
   log("search", `${ranked.length} listing${ranked.length === 1 ? "" : "s"} matched "${question}", ranked on ${Object.keys(WEIGHTS).length} signals`);
   if (candidates.length === 0) {

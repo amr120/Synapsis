@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rankedResponse } from "@/lib/market/present";
 import { rankListings } from "@/lib/market/ranking";
 import { logEvent } from "@/lib/market/store";
+import { recordSearch } from "@/lib/market/demand";
 import { publishMarkdown } from "@/lib/market/seller";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,12 @@ export async function GET(request: Request) {
   const q = params.get("q")?.trim() || undefined;
   const seller = params.get("seller")?.trim() || undefined;
   const ranked = await rankListings(q, { seller });
-  if (q) await logEvent({ type: "search", actor: request.headers.get("x-synapsis-agent")?.slice(0, 64) || "agent", subject: q.slice(0, 80), detail: `${ranked.length} hit${ranked.length === 1 ? "" : "s"}` });
+  if (q) {
+    const actor = request.headers.get("x-synapsis-agent")?.slice(0, 64) || "agent";
+    await logEvent({ type: "search", actor, subject: q.slice(0, 80), detail: `${ranked.length} hit${ranked.length === 1 ? "" : "s"}` });
+    // Searches nothing answers well become demand the autopilot can research (not a seller's view of its own files).
+    if (!seller) await recordSearch(q, actor, ranked.map((r) => r.listing));
+  }
   return NextResponse.json(rankedResponse(ranked));
 }
 
